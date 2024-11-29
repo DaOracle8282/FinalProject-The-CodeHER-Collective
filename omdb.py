@@ -7,6 +7,35 @@ import matplotlib.pyplot as plt
 
 
 
+# Set Up the Database
+def set_up_database(db_name):
+    """
+    Sets up the SQLite database and creates the Movies table.
+
+    Parameters:
+    - db_name (str): Name of the SQLite database file.
+
+    Returns:
+    - cursor, connection: Database cursor and connection objects.
+    """
+    path = os.path.dirname(os.path.abspath(__file__))
+    conn = sqlite3.connect(path + "/" + db_name)
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS Movies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT UNIQUE,
+            year INTEGER,
+            genre TEXT,
+            director TEXT,
+            imdb_rating REAL,
+            box_office INTEGER
+        )
+    """)
+    conn.commit()
+    return cur, conn
+
+
 
 def fetch_movie_data(movie_titles):
     """
