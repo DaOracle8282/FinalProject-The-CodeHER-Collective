@@ -1,13 +1,9 @@
 
-import pandas
-import os
-import sqlite3
 import requests
-import matplotlib.pyplot as plt
+import sqlite3
+import os
 
-
-
-# Set Up the Database
+# Step 1: Set Up the Database
 def set_up_database(db_name):
     """
     Sets up the SQLite database and creates the Movies table.
@@ -35,14 +31,13 @@ def set_up_database(db_name):
     conn.commit()
     return cur, conn
 
-
-# Fetch Movie Data from OMDb API
-def fetch_movie_data(movie_titles):
+# Step 2: Fetch Movie Data by Keyword
+def fetch_movie_data_by_keyword(keyword="awards"):
     """
-    Fetches data from the OMDb API for a list of movie titles.
+    Fetches data from the OMDb API using a keyword search to retrieve up to 100 movies.
 
     Parameters:
-    - movie_titles (list): List of movie titles to fetch data for.
+    - keyword (str): The search keyword to fetch movie data. Default is "awards".
 
     Returns:
     - list: List of movie data dictionaries.
@@ -50,59 +45,75 @@ def fetch_movie_data(movie_titles):
     base_url = "http://www.omdbapi.com/"
     api_key = "25781136"  # Your specific API key
     movies_data = []
+    total_results = 0
 
-    for title in movie_titles:
-        # Make API request with the provided API key
-        response = requests.get(base_url, params={"t": title, "apikey": api_key})
+    for page in range(1, 11):  # OMDb API allows up to 10 pages (10 results per page)
+        response = requests.get(base_url, params={"s": keyword, "page": page, "apikey": api_key})
         if response.status_code == 200:
             data = response.json()
             if data.get("Response") == "True":
-                movies_data.append(data)  # Add movie data to the list
+                movies = data.get("Search", [])
+                movies_data.extend(movies)
+                total_results += len(movies)
+                if total_results >= 100:  # Stop if we’ve fetched at least 100 items
+                    break
             else:
-                print(f"Movie not found: {title}")  # Handle missing movies
+                print(f"No more results found for keyword: {keyword}")
+                break
         else:
-            print(f"Error fetching data for {title}: {response.status_code}")  # Handle API errors
+            print(f"Error fetching data for keyword '{keyword}': {response.status_code}")
+            break
 
-    return movies_data
+    return movies_data[:100]  # Ensure we only return up to 100 items
 
-
-# Store Data into the Database
-def store_movie_data(movies_data, cur, conn):
+# Step 3: Store Movie Data from Search
+def store_movie_data_from_search(movies_data, cur, conn):
     """
-    Stores up to 25 movie records in the database, avoiding duplicates.
+    Stores movie data from a search-based API fetch into the database.
 
     Parameters:
-    - movies_data (list): List of movie data dictionaries.
+    - movies_data (list): List of movie search results dictionaries.
     - cur: SQLite database cursor.
     - conn: SQLite database connection.
 
     Returns:
     - None
     """
-    count = 0
     for movie in movies_data:
-        if count >= 25:  # Limit to 25 items per run
-            break
-
         try:
+            # Fetch full details for each movie using its IMDb ID
+            movie_id = movie.get("imdbID")
+            full_movie_data = requests.get(
+                "http://www.omdbapi.com/",
+                params={"i": movie_id, "apikey": "25781136"}
+            ).json()
+
+            # Handle missing data by replacing 'N/A' with None or defaults
+            title = full_movie_data.get("Title", "N/A")
+            year = full_movie_data.get("Year", "0")
+            genre = full_movie_data.get("Genre", "N/A")
+            director = full_movie_data.get("Director", "N/A")
+            imdb_rating = full_movie_data.get("imdbRating", "0.0")
+            box_office = full_movie_data.get("BoxOffice", "0").replace("$", "").replace(",", "")
+
+            # Convert fields to appropriate types or default values
+            year = int(year) if year.isdigit() else None
+            imdb_rating = float(imdb_rating) if imdb_rating != "N/A" else None
+            box_office = int(box_office) if box_office.isdigit() else None
+
+            # Insert the cleaned data into the database
             cur.execute("""
                 INSERT OR IGNORE INTO Movies (title, year, genre, director, imdb_rating, box_office)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, (
-                movie.get("Title", "N/A"),
-                int(movie.get("Year", "0")),
-                movie.get("Genre", "N/A"),
-                movie.get("Director", "N/A"),
-                float(movie.get("imdbRating", "0.0")),
-                int(movie.get("BoxOffice", "0").replace("$", "").replace(",", "") or 0)
-            ))
-            count += 1
-        except sqlite3.IntegrityError:
-            print(f"Duplicate entry skipped: {movie.get('Title')}")
+            """, (title, year, genre, director, imdb_rating, box_office))
+
+        except Exception as e:
+            print(f"Error storing movie: {e}")
 
     conn.commit()
 
-# Query Data from the Database
+
+# Step 4: Query Data from the Database
 def query_movies(cur):
     """
     Queries the Movies table for data.
@@ -120,14 +131,33 @@ def query_movies(cur):
     """)
     return cur.fetchall()
 
+def main():
+    """
+    Main function for testing the OMDb-specific code.
+    """
+    # Step 1: Set up the database
+    cur, conn = set_up_database("movies.db")  # Create or connect to the Movies database
 
-# Function to Test OMDb File Before Integration. Remove When When Code Integrated
-if __name__ == "__main__":
-    cur, conn = set_up_database("movies.db")
-    movie_titles = ["Inception", "The Dark Knight", "Interstellar"]
-    movies_data = fetch_movie_data(movie_titles)
-    store_movie_data(movies_data, cur, conn)
-    movies = query_movies(cur)
-    for movie in movies:
+    # Step 2: Fetch and store movie data using the "awards" keyword
+    print("Fetching movie data...")
+    movies_data = fetch_movie_data_by_keyword("awards")  # Fetch up to 100 movies
+    print(f"Fetched {len(movies_data)} movies. Storing data in the database...")
+    store_movie_data_from_search(movies_data, cur, conn)  # Store the data in the database
+    print("Data successfully stored!")
+
+    # Step 3: Query the database
+    print("Querying the database...")
+    movies = query_movies(cur)  # Retrieve all stored movies sorted by IMDb rating
+    print(f"Retrieved {len(movies)} movies from the database.")
+    
+    # Print the top 10 movies for verification
+    print("\nTop 10 Movies by IMDb Rating:")
+    for movie in movies[:10]:
         print(movie)
+
+    # Step 4: Close the database connection
     conn.close()
+    print("Database connection closed.")
+
+if __name__ == "__main__":
+    main()
