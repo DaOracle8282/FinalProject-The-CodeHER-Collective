@@ -102,3 +102,32 @@ def store_movie_data(movies_data, cur, conn):
 
     conn.commit()
 
+# Query Data from the Database
+def query_movies(cur):
+    """
+    Queries the Movies table for data.
+
+    Parameters:
+    - cur: SQLite database cursor.
+
+    Returns:
+    - list: List of tuples containing queried movie data.
+    """
+    cur.execute("""
+        SELECT title, genre, imdb_rating, box_office
+        FROM Movies
+        ORDER BY imdb_rating DESC
+    """)
+    return cur.fetchall()
+
+
+# Function to Test OMDb File Before Integration. Remove When When Code Integrated
+if __name__ == "__main__":
+    cur, conn = set_up_database("movies.db")
+    movie_titles = ["Inception", "The Dark Knight", "Interstellar"]
+    movies_data = fetch_movie_data(movie_titles)
+    store_movie_data(movies_data, cur, conn)
+    movies = query_movies(cur)
+    for movie in movies:
+        print(movie)
+    conn.close()
