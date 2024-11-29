@@ -36,7 +36,7 @@ def set_up_database(db_name):
     return cur, conn
 
 
-
+# Fetch Movie Data from OMDb API
 def fetch_movie_data(movie_titles):
     """
     Fetches data from the OMDb API for a list of movie titles.
@@ -66,5 +66,39 @@ def fetch_movie_data(movie_titles):
     return movies_data
 
 
+# Store Data into the Database
+def store_movie_data(movies_data, cur, conn):
+    """
+    Stores up to 25 movie records in the database, avoiding duplicates.
 
+    Parameters:
+    - movies_data (list): List of movie data dictionaries.
+    - cur: SQLite database cursor.
+    - conn: SQLite database connection.
+
+    Returns:
+    - None
+    """
+    count = 0
+    for movie in movies_data:
+        if count >= 25:  # Limit to 25 items per run
+            break
+
+        try:
+            cur.execute("""
+                INSERT OR IGNORE INTO Movies (title, year, genre, director, imdb_rating, box_office)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                movie.get("Title", "N/A"),
+                int(movie.get("Year", "0")),
+                movie.get("Genre", "N/A"),
+                movie.get("Director", "N/A"),
+                float(movie.get("imdbRating", "0.0")),
+                int(movie.get("BoxOffice", "0").replace("$", "").replace(",", "") or 0)
+            ))
+            count += 1
+        except sqlite3.IntegrityError:
+            print(f"Duplicate entry skipped: {movie.get('Title')}")
+
+    conn.commit()
 
