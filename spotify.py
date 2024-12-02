@@ -23,12 +23,6 @@ def get_token():
                             scope="user-library-read")
    token_info = sp_oauth.get_cached_token()
    return token_info['access_token']
- 
- 
- 
-
-
-#print(json.dumps(VARIABLE, sort_keys = True, indent = 4))
 
 
 #Step 2: Create soundtrack table in existing Movies database
@@ -61,24 +55,23 @@ def create_soundtrack_table(db_name):
 
 
 #Step 3: Request movie soundtrack data from Spotipy and store in soundtrack table
-def fetch_spotify_data(cur, conn, token, movie_titles):
+def fetch_spotify_data(cur, conn, token, title):
    sp = spotipy.Spotify(auth=token)
-   for title in movie_titles:
-      try:
-            results = sp.search(q=title, type="album", limit=1)
-            album = results["albums"]["items"][0]
-            album_name = album["name"]
-            artists = ", ".join(artist["name"] for artist in album["artists"])
-            genre = "Soundtrack"
-
-            cur.execute("""
-                INSERT OR IGNORE INTO Soundtracks (movie_title, artists, album_name, genre)
-                VALUES (?, ?, ?, ?)
+   try:
+         results = sp.search(q=title, type="album", limit=1)
+         album = results["albums"]["items"][0]
+         album_name = album["name"]
+         artists = ", ".join(artist["name"] for artist in album["artists"])
+         genre = "Soundtrack"
+         cur.execute("""
+            INSERT OR IGNORE INTO Soundtracks (movie_title, artists, album_name, genre)
+            VALUES (?, ?, ?, ?)
             """, (title, artists, album_name, genre))
-      except Exception as e:
-            print(f"Error fetching data for {title}: {e}")
+   except Exception as e:
+         print(f"Error fetching data for {title}: {e}")
 
    conn.commit()
+
 
 
 #Step 4: Run a query on Soundtracks table
@@ -99,15 +92,11 @@ def main():
    cur, conn = create_soundtrack_table("movies.db")
     # Example movie titles
    movie_titles = ["Inception", "Avatar", "Interstellar", "The Dark Knight"]
-   fetch_spotify_data(cur, conn, token, movie_titles)
+   for title in movie_titles:
+      fetch_spotify_data(cur, conn, token, title)
 
    soundtrack_query(cur)
    conn.close()
-
-
-
-
-
 
 # Step 6: Run the main function
 if __name__ == "__main__":
