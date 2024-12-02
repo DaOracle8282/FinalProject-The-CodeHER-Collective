@@ -9,9 +9,9 @@ import json
 import unittest
 import os
 
-   #Get username from terminal
-   username =sys.argv[1]
-   # User ID: 31jrnyjlbu5eu3ghppc5g25fafty
+#Get username from terminal
+username =sys.argv[1]
+# User ID: 31jrnyjlbu5eu3ghppc5g25fafty
 
 
 #Erase cache and prompt for user permission
