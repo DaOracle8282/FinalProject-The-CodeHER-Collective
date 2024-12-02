@@ -82,8 +82,15 @@ def fetch_spotify_data(cur, conn, token, movie_titles):
 
 
 #Step 4: Run a query on Soundtracks table
-def soundtrack_query():
-   pass
+def soundtrack_query(cur):
+    cur.execute("""
+        SELECT movie_title, artists, album_name, genre
+        FROM Soundtracks
+        ORDER BY movie_title ASC
+    """)
+    results = cur.fetchall()
+    for row in results:
+        print(row)
 
 
 #Step 5: Define main function
@@ -93,6 +100,9 @@ def main():
     # Example movie titles
    movie_titles = ["Inception", "Avatar", "Interstellar", "The Dark Knight"]
    fetch_spotify_data(cur, conn, token, movie_titles)
+
+   soundtrack_query(cur)
+   conn.close()
 
 
 
