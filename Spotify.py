@@ -2,10 +2,12 @@
 import sqlite3
 import base64
 from requests import post
+from dotenv import load_dotenv
 import json
 import unittest
 import os
 
+load_dotenv()
 client_id = "cdc220444d2a42f5a7c4472fbe862667"
 client_secret = "7f72898d496246ea978f8886753a3557"
 
@@ -27,5 +29,3 @@ def get_token():
 
 token = get_token()
 print(token)
-
-
