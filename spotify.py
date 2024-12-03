@@ -54,8 +54,16 @@ def create_soundtrack_table(db_name):
 
 #Step 3: Request movie soundtrack data from Spotipy and store in soundtrack table
 def fetch_spotify_data(cur, conn, token, title):
-   sp = spotipy.Spotify(auth=token)
-   search_query = "soundtrack"
+    offset = 0
+    sp = spotipy.Spotify(auth=token)
+    try:
+            # Search for albums with the keyword 'soundtrack'
+        results = sp.search(q=title, type="album", limit=2, offset=offset)
+        return results
+    except Exception as e:
+        print(f"Error inserting soundtrack: {title}. Error: {e}")
+
+'''
    offset = 0
    limit = 50
 
@@ -69,9 +77,8 @@ def fetch_spotify_data(cur, conn, token, title):
 
 
    while soundtracks_count < limit:
-        try:
-            # Search for albums with the keyword 'soundtrack'
-            results = sp.search(q=search_query, type="album", limit=50, offset=offset)
+        
+
             albums = results["albums"]["items"]
 
             if not albums:
@@ -86,7 +93,7 @@ def fetch_spotify_data(cur, conn, token, title):
                 # Insert into the database
                 try:
                     cur.execute("""
-                        INSERT OR IGNORE INTO Soundtracks (album_name, artists, genre)
+                        INSERT OR IGNORE INTO Soundtracks ( movie_title, album_name, artists, genre)
                         VALUES (?, ?, ?)
                     """, (album_name, artists, genre))
                     soundtracks_count += 1
@@ -96,15 +103,14 @@ def fetch_spotify_data(cur, conn, token, title):
                         break
                 except Exception as e:
                     print(f"Error inserting soundtrack: {album_name}. Error: {e}")
-
+            
             # Increase offset for the next batch
-            offset += 50
-        except Exception as e:
-            print(f"Error fetching data from Spotify: {e}")
-            break
+        offset += 50
+            except Exception as e:
+                print(f"Error fetching data from Spotify: {e}")
+                break
 
-   conn.commit()
-
+'''
 
 #Step 4: Run a query on Soundtracks table
 def soundtrack_query(cur):
@@ -132,4 +138,8 @@ def main():
 if __name__ == "__main__":
    main()
 '''
-print(get_token())
+token = get_token()
+cur, conn = create_soundtrack_table("movies.db")
+movie = "Wicked"
+wicked_results = fetch_spotify_data(cur, conn,token, movie)
+print(wicked_results)
