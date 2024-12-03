@@ -1,8 +1,9 @@
 import sqlite3
 import spotipy
-from spotipy.oauth2 import SpotifyOAuth
-import sys
+import spotipy.oauth2 as oauth2
+from spotipy.oauth2 import SpotifyClientCredentials
 import spotipy.util as util
+import sys
 import webbrowser
 from json.decoder import JSONDecodeError
 import requests
@@ -15,14 +16,12 @@ import re
 def get_token():
    CLIENT_ID = "cdc220444d2a42f5a7c4472fbe862667"
    CLIENT_SECRET = "7f72898d496246ea978f8886753a3557"
-   REDIRECT_URI = "https://www.google.com/?code=AQBvXoNUMhosHVyEwejSFYk1sI6kyUR0bbJIT0N1XCtSrF5nKqOQxf7yf07ZI4-QTMTT82ri_RIUfiGt9pynrx-dBGj7lHgnhJoe6WduFFzSKPF_ehjXrHHvUy4pKcd_IpnyJkEpEZ6agYHtw6yxap6rghCTaP0QUIFhjogQvH4R8y1dcrVUNAM"
 
-   sp_oauth = SpotifyOAuth(client_id=CLIENT_ID,
-                            client_secret=CLIENT_SECRET,
-                            redirect_uri=REDIRECT_URI,
-                            scope="user-library-read")
-   token_info = sp_oauth.get_cached_token()
-   return token_info['access_token']
+   sp_oauth = oauth2.SpotifyClientCredentials(client_id=CLIENT_ID,
+                            client_secret=CLIENT_SECRET)
+   token_info = sp_oauth.get_access_token()
+   return token_info["access_token"]
+ 
 
 
 #Step 2: Create soundtrack table in existing Movies database
@@ -41,7 +40,6 @@ def create_soundtrack_table(db_name):
    path = os.path.dirname(os.path.abspath(__file__))
    conn = sqlite3.connect(os.path.join(path, db_name))
    cur = conn.cursor()
-   cur.execute("DROP TABLE IF EXISTS Soundtracks")
    cur.execute("""CREATE TABLE IF NOT EXISTS Soundtracks ( 
                id INTEGER PRIMARY KEY,
                movie_title TEXT, 
@@ -129,7 +127,9 @@ def main():
 
    soundtrack_query(cur)
    conn.close()
-
+'''
 # Step 6: Run the main function
 if __name__ == "__main__":
    main()
+'''
+print(get_token())
