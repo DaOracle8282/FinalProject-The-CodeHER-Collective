@@ -17,8 +17,7 @@ def set_up_database(db_name):
     path = os.path.dirname(os.path.abspath(__file__))
     conn = sqlite3.connect(os.path.join(path, db_name))
     cur = conn.cursor()
-    # Drop the table to ensure it's clean for each run
-    cur.execute("DROP TABLE IF EXISTS Movies")
+    # Create the Movies table if it doesn't exist
     cur.execute("""
         CREATE TABLE IF NOT EXISTS Movies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,7 +32,7 @@ def set_up_database(db_name):
     return cur, conn
 
 # Step 2: Fetch Movies by Year
-def fetch_movies_by_year(cur, conn, start_year=2015, limit=100):
+def fetch_movies_by_year(cur, conn, start_year=2015, limit=25):
     """
     Fetches movies from the OMDb API based on year and inserts them into the database.
 
@@ -41,18 +40,25 @@ def fetch_movies_by_year(cur, conn, start_year=2015, limit=100):
     - cur: Database cursor.
     - conn: Database connection.
     - start_year (int): Starting year for fetching movies.
-    - limit (int): Maximum number of movies to fetch.
+    - limit (int): Maximum number of movies to store in the database.
 
     Returns:
     - None
     """
     base_url = "http://www.omdbapi.com/"
-    api_key = "25781136"  # Replace with API key
+    api_key = "25781136"  # Replace with your API key
     current_year = datetime.now().year
-    movies_count = 0  # Track the number of movies added
+    page = 1
+
+    # Count existing movies in the database
+    cur.execute("SELECT COUNT(*) FROM Movies")
+    movies_count = cur.fetchone()[0]
+
+    if movies_count >= limit:
+        print(f"Database already contains {movies_count} movies. Limit reached.")
+        return
 
     for year in range(start_year, current_year + 1):
-        page = 1
         while movies_count < limit:
             response = requests.get(base_url, params={
                 "s": "movie",  # Broad search term
@@ -135,8 +141,8 @@ def main():
     # Step 4.1: Set up the database
     cur, conn = set_up_database("movies.db")
 
-    # Step 4.2: Fetch movies starting from 2015 and limited to 100
-    fetch_movies_by_year(cur, conn, start_year=2015, limit=100)
+    # Step 4.2: Fetch movies starting from 2015 and limited to 25
+    fetch_movies_by_year(cur, conn, start_year=2015, limit=25)
 
     # Step 4.3: Query and display the movies
     movies = query_movies(cur)
