@@ -11,6 +11,14 @@ import json
 import os
 import re
 
+'''
+Things to still work out: 
+-filter albums by year when pulling from api to match albums with movies (this could possibly be a join to match together movies with soundtrack)
+-ensure fetch_spotify data is pulling 25 or less items each time it is run for a total of 100 or more
+-create another table other than soundtracks to fufill requirement that at least one API must have two tables that share an integer key (could be songs table maybe?)
+-what is going to be calculated from this api's tables? maybe average length of albums, or top 5 longest albums, or top 5 most listened to songs? 
+
+'''
 
 #Step 1: Set up connection to Spotipy
 def get_token():
