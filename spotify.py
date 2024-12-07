@@ -4,13 +4,18 @@ import spotipy.oauth2 as oauth2
 from spotipy.oauth2 import SpotifyClientCredentials
 import spotipy.util as util
 import sys
-import webbrowser
 from json.decoder import JSONDecodeError
-import requests
-import json
 import os
-import re
 
+
+'''
+Things to still work out (Complete Wednesday): 
+-filter albums by year when pulling from api to match albums with movies (this could possibly be a join to match together movies with soundtrack)
+-ensure fetch_spotify data is pulling 25 or less items each time it is run for a total of 100 or more
+-create another table other than soundtracks to fufill requirement that at least one API must have two tables that share an integer key (could be songs table maybe?)
+-what is going to be calculated from this api's tables? maybe average length of albums, or top 5 longest albums, or top 5 most listened to songs? 
+
+'''
 
 #Step 1: Set up connection to Spotipy
 def get_token():
@@ -42,9 +47,9 @@ def create_soundtrack_table(db_name):
    cur = conn.cursor()
    cur.execute("""CREATE TABLE IF NOT EXISTS Soundtracks ( 
                id INTEGER PRIMARY KEY,
-               movie_title TEXT, 
+               movie_title TEXT UNIQUE, 
                artists TEXT, 
-               album_name TEXT, 
+               album_name TEXT UNIQUE, 
                genre TEXT
                )
                 """)
@@ -52,33 +57,25 @@ def create_soundtrack_table(db_name):
    return cur, conn
 
 
+
 #Step 3: Request movie soundtrack data from Spotipy and store in soundtrack table
 def fetch_spotify_data(cur, conn, token, title):
     offset = 0
-    sp = spotipy.Spotify(auth=token)
-    try:
-            # Search for albums with the keyword 'soundtrack'
-        results = sp.search(q=title, type="album", limit=2, offset=offset)
-        return results
-    except Exception as e:
-        print(f"Error inserting soundtrack: {title}. Error: {e}")
-
-'''
-   offset = 0
-   limit = 50
+    limit = 100
 
     # Count existing soundtracks in the database
-   cur.execute("SELECT COUNT(*) FROM Soundtracks")
-   soundtracks_count = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM Soundtracks")
+    soundtracks_count = cur.fetchone()[0]
 
-   if soundtracks_count >= limit:
+    if soundtracks_count >= limit:
         print(f"Database already contains {soundtracks_count} soundtracks. Limit reached.")
         return
 
-
-   while soundtracks_count < limit:
-        
-
+    while soundtracks_count < limit:
+        sp = spotipy.Spotify(auth=token)
+        try:
+            # Search for albums by title
+            results = sp.search(q=title, type="album", limit=25, offset=offset)
             albums = results["albums"]["items"]
 
             if not albums:
@@ -86,6 +83,7 @@ def fetch_spotify_data(cur, conn, token, title):
                 break
 
             for album in albums:
+                movie_title =title
                 album_name = album["name"]
                 artists = ", ".join(artist["name"] for artist in album["artists"])
                 genre = "Soundtrack"  # Assuming all are soundtracks
@@ -94,8 +92,8 @@ def fetch_spotify_data(cur, conn, token, title):
                 try:
                     cur.execute("""
                         INSERT OR IGNORE INTO Soundtracks ( movie_title, album_name, artists, genre)
-                        VALUES (?, ?, ?)
-                    """, (album_name, artists, genre))
+                        VALUES (?,?, ?, ?)
+                    """, (movie_title,album_name, artists, genre))
                     soundtracks_count += 1
                     print(f"Inserted: {album_name}")
 
@@ -105,12 +103,12 @@ def fetch_spotify_data(cur, conn, token, title):
                     print(f"Error inserting soundtrack: {album_name}. Error: {e}")
             
             # Increase offset for the next batch
-        offset += 50
-            except Exception as e:
-                print(f"Error fetching data from Spotify: {e}")
-                break
+            offset += 50
+        except Exception as e:
+            print(f"Error fetching data from Spotify: {e}")
+            break
 
-'''
+
 
 #Step 4: Run a query on Soundtracks table
 def soundtrack_query(cur):
@@ -138,8 +136,4 @@ def main():
 if __name__ == "__main__":
    main()
 '''
-token = get_token()
-cur, conn = create_soundtrack_table("movies.db")
-movie = "Wicked"
-wicked_results = fetch_spotify_data(cur, conn,token, movie)
-print(wicked_results)
+
