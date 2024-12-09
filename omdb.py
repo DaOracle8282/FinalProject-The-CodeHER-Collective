@@ -50,6 +50,8 @@ def fetch_movies_by_year(cur, conn, start_year=2015, limit=25):
     current_year = datetime.now().year
     page = 1
 
+    movies_list =[] #initialize movies list to use to search spotify and news apis
+
     # Count existing movies in the database
     cur.execute("SELECT COUNT(*) FROM Movies")
     movies_count = cur.fetchone()[0]
@@ -85,6 +87,10 @@ def fetch_movies_by_year(cur, conn, start_year=2015, limit=25):
                             genre = full_data.get("Genre")
                             country = full_data.get("Country")
                             imdb_rating = full_data.get("imdbRating", "N/A")
+
+
+                            movies_list.append(title) #adds movie title to movie list 
+
                             if imdb_rating == "N/A":
                                 imdb_rating = 0.0  # Default missing ratings to 0.0
 
@@ -114,6 +120,7 @@ def fetch_movies_by_year(cur, conn, start_year=2015, limit=25):
                 break
 
     conn.commit()  # Save changes to the database
+    return movies_list
 
 # Step 3: Query Movies from the Database
 def query_movies(cur):
@@ -142,8 +149,8 @@ def main():
     cur, conn = set_up_database("movies.db")
 
     # Step 4.2: Fetch movies starting from 2015 and limited to 25
-    fetch_movies_by_year(cur, conn, start_year=2015, limit=25)
-
+    movies = fetch_movies_by_year(cur, conn, start_year=2015, limit=25)
+    print(movies)
     # Step 4.3: Query and display the movies
     movies = query_movies(cur)
     print(f"\nTotal Movies Fetched: {len(movies)}\n")
