@@ -76,7 +76,7 @@ def create_soundtrack_and_song_tables(db_name):
                id INTEGER PRIMARY KEY,
                song_title TEXT,
                soundtrack_id INTEGER,
-               FOREIGN KEY (st_id) REFERENCES soundtracks(id))
+               FOREIGN KEY (soundtrack_id) REFERENCES soundtracks(id))
                """)
    conn.commit()
    return cur, conn
