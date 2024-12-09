@@ -63,7 +63,7 @@ def fetch_movies_by_year(cur, conn, start_year=2015, limit=25):
     for year in range(start_year, current_year + 1):
         while movies_count < limit:
             response = requests.get(base_url, params={
-                "s": "movie",  # Broad search term
+                "s": "movie",  # Broad search term 
                 "type": "movie",
                 "y": year,
                 "page": page,
