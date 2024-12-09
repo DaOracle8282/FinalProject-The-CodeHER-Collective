@@ -3,7 +3,7 @@ import requests
 import sqlite3
 import os
 from datetime import datetime
-from spotify import fetch_spotify_data  # Assuming fetch_spotify_data exists in spotify.py
+from spotify import fetch_spotify_data, get_token  # Assuming fetch_spotify_data and get_token exists in spotify.py
 from news import fetch_news_articles  # Assuming fetch_news_articles exists in news.py
 
 # Step 1: Set Up the Database
@@ -130,7 +130,7 @@ def query_movies(cur):
     return cur.fetchall()
 
 # Step 4: Fetch Spotify Data
-def integrate_spotify(movies):
+def integrate_spotify(cur, con, token, movies):
     """
     Fetches Spotify data related to movie titles.
 
@@ -143,7 +143,7 @@ def integrate_spotify(movies):
     spotify_data = {}
     for movie in movies:
         title = movie[0]  # Get movie title
-        spotify_info = fetch_spotify_data(title)  # Fetch data from Spotify
+        spotify_info = fetch_spotify_data(cur, con,token,title)  # Fetch data from Spotify
         if spotify_info:
             spotify_data[title] = spotify_info
     return spotify_data
@@ -167,6 +167,7 @@ def integrate_news(movies):
             news_data[title] = news_info
     return news_data
 
+
 # Step 6: Main Function
 def main():
     """
@@ -184,8 +185,10 @@ def main():
     for movie in movies:
         print(movie)
 
-    # Step 6.4: Integrate Spotify data
-    spotify_data = integrate_spotify(movies)
+
+    # Step 6.4: Get token and Integrate Spotify data
+    token = get_token()
+    spotify_data = integrate_spotify(cur,conn, token, movies )
     print("\nSpotify Data:")
     for title, data in spotify_data.items():
         print(f"{title}: {data}")
