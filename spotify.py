@@ -36,6 +36,15 @@ def set_up_database(db_name):
     return cur, conn
 #Step 1: Set up connection to Spotipy
 def get_token():
+    """
+    Sets up the connection to the Spotipy API.
+
+    Parameters:
+    - None.
+
+    Returns:
+    - token_info: token granted to access Spotify API.
+    """
    CLIENT_ID = "cdc220444d2a42f5a7c4472fbe862667"
    CLIENT_SECRET = "7f72898d496246ea978f8886753a3557"
 
