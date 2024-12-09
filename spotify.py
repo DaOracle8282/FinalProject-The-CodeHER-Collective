@@ -47,7 +47,7 @@ def create_soundtrack_and_song_tables(db_name):
    cur.execute("""CREATE TABLE IF NOT EXISTS soundtracks ( 
                id INTEGER PRIMARY KEY AUTOINCREMENT,
                movie_title TEXT UNIQUE, 
-               movie_id INTEGER
+               movie_id INTEGER,
                album_name TEXT UNIQUE, 
                genre TEXT,
                FOREIGN KEY (movie_id) REFERENCES movie(id)
