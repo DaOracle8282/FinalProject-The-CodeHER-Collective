@@ -3,8 +3,8 @@ import requests
 import sqlite3
 import os
 from datetime import datetime
-from spotify import fetch_spotify_data, get_token  # Assuming fetch_spotify_data exists in spotify.py
-#from news import fetch_news_articles  # Assuming fetch_news_articles exists in news.py
+from spotify import fetch_spotify_data, get_token  # Assuming fetch_spotify_data and get_token exists in spotify.py
+from news import fetch_news_articles  # Assuming fetch_news_articles exists in news.py
 
 # Step 1: Set Up the Database
 def set_up_database(db_name):
@@ -147,7 +147,7 @@ def integrate_spotify(cur, con, token, movies):
         if spotify_info:
             spotify_data[title] = spotify_info
     return spotify_data
-'''
+
 # Step 5: Fetch News Articles
 def integrate_news(movies):
     """
@@ -166,7 +166,7 @@ def integrate_news(movies):
         if news_info:
             news_data[title] = news_info
     return news_data
-'''
+
 
 # Step 6: Main Function
 def main():
@@ -192,7 +192,7 @@ def main():
     print("\nSpotify Data:")
     for title, data in spotify_data.items():
         print(f"{title}: {data}")
-'''
+
     # Step 6.5: Integrate NewsAPI data
     news_data = integrate_news(movies)
     print("\nNews Articles:")
@@ -201,7 +201,7 @@ def main():
 
     # Step 6.6: Close the database connection
     conn.close()
-'''
+
 # Step 7: Run the Main Function
 if __name__ == "__main__":
     main()
