@@ -3,6 +3,14 @@ import sqlite3
 import os
 from datetime import datetime
 
+# New function to remove unnecessary database
+def remove_database(db_name):
+    if os.path.exists(db_name):
+        os.remove(db_name)
+        print(f"Unnecessary database file '{db_name}' has been removed.")
+    else:
+        print(f"Database file '{db_name}' does not exist.")
+
 # Step 1: Set Up the Database
 def set_up_database(db_name):
     path = os.path.dirname(os.path.abspath(__file__))
@@ -124,7 +132,11 @@ def query_movies(cur):
 # Step 4: Main Function
 def main():
     print("Starting the movie fetching process...")
-    cur, conn = set_up_database("movies_2024.db")
+    
+    # Remove unnecessary database
+    remove_database("movies2024.db")
+    
+    cur, conn = set_up_database("movies.db")
     print("Database connection established.")
 
     # Fetch movies for 2024, limited to 25 per run, with a maximum of 100 total
