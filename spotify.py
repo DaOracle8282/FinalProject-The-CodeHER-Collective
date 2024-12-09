@@ -9,10 +9,9 @@ import os
 
 
 '''
-Things to still work out (Complete Wednesday): 
+Things to still work out (Complete ): 
 -filter albums by year when pulling from api to match albums with movies (this could possibly be a join to match together movies with soundtrack)
 -ensure fetch_spotify data is pulling 25 or less items each time it is run for a total of 100 or more
--create another table other than soundtracks to fufill requirement that at least one API must have two tables that share an integer key (could be songs table maybe?)
 -what is going to be calculated from this api's tables? maybe average length of albums, or top 5 longest albums, or top 5 most listened to songs? 
 
 '''
@@ -24,13 +23,13 @@ def get_token():
 
    sp_oauth = oauth2.SpotifyClientCredentials(client_id=CLIENT_ID,
                             client_secret=CLIENT_SECRET)
-   token_info = sp_oauth.get_access_token()
-   return token_info["access_token"]
+   token_info = sp_oauth.get_access_token(as_dict=False)
+   return token_info
  
 
 
 #Step 2: Create soundtrack table in existing Movies database
-def create_soundtrack_table(db_name):
+def create_soundtrack_and_song_tables(db_name):
    """
   creates the soundtrack table.
 
@@ -45,21 +44,29 @@ def create_soundtrack_table(db_name):
    path = os.path.dirname(os.path.abspath(__file__))
    conn = sqlite3.connect(os.path.join(path, db_name))
    cur = conn.cursor()
-   cur.execute("""CREATE TABLE IF NOT EXISTS Soundtracks ( 
-               id INTEGER PRIMARY KEY,
+   cur.execute("""CREATE TABLE IF NOT EXISTS soundtracks ( 
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
                movie_title TEXT UNIQUE, 
-               artists TEXT, 
+               movie_id INTEGER
                album_name TEXT UNIQUE, 
-               genre TEXT
+               genre TEXT,
+               FOREIGN KEY (movie_id) REFERENCES movie(id)
                )
                 """)
+   
+   cur.execute("""CREATE TABLE IF NOT EXISTS soundtrack_songs (
+               id INTEGER PRIMARY KEY,
+               song_title TEXT,
+               st_id INTEGER,
+               FOREIGN KEY (st_id) REFERENCES soundtracks(id))
+               """)
    conn.commit()
    return cur, conn
 
 
 
 #Step 3: Request movie soundtrack data from Spotipy and store in soundtrack table
-def fetch_spotify_data(cur, conn, token, title):
+def fetch_soundtrack_data(cur, conn, token, title):
     offset = 0
     limit = 100
 
@@ -75,7 +82,7 @@ def fetch_spotify_data(cur, conn, token, title):
         sp = spotipy.Spotify(auth=token)
         try:
             # Search for albums by title
-            results = sp.search(q=title, type="album", limit=25, offset=offset)
+            results = sp.search(q=title+ " year:2023", type="album", limit=25, offset=offset)
             albums = results["albums"]["items"]
 
             if not albums:
@@ -91,7 +98,7 @@ def fetch_spotify_data(cur, conn, token, title):
                 # Insert into the database
                 try:
                     cur.execute("""
-                        INSERT OR IGNORE INTO Soundtracks ( movie_title, album_name, artists, genre)
+                        INSERT OR IGNORE INTO Soundtracks (movie_title, album_name, artists, genre)
                         VALUES (?,?, ?, ?)
                     """, (movie_title,album_name, artists, genre))
                     soundtracks_count += 1
@@ -124,16 +131,17 @@ def soundtrack_query(cur):
 
 #Step 5: Define main function
 def main():
-   token = get_token()
-   cur, conn = create_soundtrack_table("movies.db")
+    token = get_token()
+    cur, conn = create_soundtrack_and_song_tables("movies.db")
     # Example movie titles
-                                                                                                                                                                   
-
-   soundtrack_query(cur)
-   conn.close()
+    conn.close()
+                                                                                                                                                              
 '''
+   soundtrack_query(cur)
+'''
+
 # Step 6: Run the main function
 if __name__ == "__main__":
    main()
-'''
+
 
