@@ -66,7 +66,7 @@ def create_soundtrack_and_song_tables(db_name):
                id INTEGER PRIMARY KEY AUTOINCREMENT,
                movie_title TEXT UNIQUE, 
                movie_id INTEGER,
-               album_name TEXT UNIQUE, 
+               soundtrack_name TEXT UNIQUE, 
                genre TEXT,
                FOREIGN KEY (movie_id) REFERENCES movie(id)
                )
@@ -75,7 +75,7 @@ def create_soundtrack_and_song_tables(db_name):
    cur.execute("""CREATE TABLE IF NOT EXISTS soundtrack_songs (
                id INTEGER PRIMARY KEY,
                song_title TEXT,
-               st_id INTEGER,
+               soundtrack_id INTEGER,
                FOREIGN KEY (st_id) REFERENCES soundtracks(id))
                """)
    conn.commit()
@@ -124,7 +124,7 @@ def fetch_soundtrack_data(cur, conn, token, movies_list):
                 # Insert into the database
                             try:
                                 cur.execute("""
-                                    INSERT OR IGNORE INTO Soundtracks (movie_title, album_name, movie_id, genre)
+                                    INSERT OR IGNORE INTO Soundtracks (movie_title, movie_id, soundtrack_name, genre)
                                     VALUES (?,?, ?, ?)
                                 """, (movie_title, soundtrack_name, movie_id, genre))
                                 soundtracks_count += 1
@@ -157,8 +157,8 @@ def soundtrack_query(cur):
 def main():
     token = get_token()
     cur, conn = set_up_database("movies.db")
-    cur, conn = create_soundtrack_and_song_tables("movies.db")
     movies = fetch_movies_by_year(cur, conn, start_year=2015, limit=25)
+    create_soundtrack_and_song_tables("movies.db")
     fetch_soundtrack_data(cur, conn, token, movies)
     # Example movie titles
     conn.close()
