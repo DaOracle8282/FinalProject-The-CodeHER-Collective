@@ -5,17 +5,35 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import spotipy.util as util
 import sys
 from json.decoder import JSONDecodeError
+from omdb import set_up_database, fetch_movies_by_year
 import os
 
+def set_up_database(db_name):
+    """
+    Sets up the SQLite database and creates the Movies table.
 
-'''
-Things to still work out (Complete ): 
--filter albums by year when pulling from api to match albums with movies (this could possibly be a join to match together movies with soundtrack)
--ensure fetch_spotify data is pulling 25 or less items each time it is run for a total of 100 or more
--what is going to be calculated from this api's tables? maybe average length of albums, or top 5 longest albums, or top 5 most listened to songs? 
+    Parameters:
+    - db_name (str): Name of the SQLite database file.
 
-'''
-
+    Returns:
+    - cursor, connection: Database cursor and connection objects.
+    """
+    path = os.path.dirname(os.path.abspath(__file__))
+    conn = sqlite3.connect(os.path.join(path, db_name))
+    cur = conn.cursor()
+    # Create the Movies table if it doesn't exist
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS Movies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT UNIQUE,
+            year INTEGER,
+            genre TEXT,
+            country TEXT,
+            imdb_rating REAL
+        )
+    """)
+    conn.commit()
+    return cur, conn
 #Step 1: Set up connection to Spotipy
 def get_token():
    CLIENT_ID = "cdc220444d2a42f5a7c4472fbe862667"
@@ -66,12 +84,12 @@ def create_soundtrack_and_song_tables(db_name):
 
 
 #Step 3: Request movie soundtrack data from Spotipy and store in soundtrack table
-def fetch_soundtrack_data(cur, conn, token, title):
+def fetch_soundtrack_data(cur, conn, token, movies_list):
     offset = 0
     limit = 100
 
     # Count existing soundtracks in the database
-    cur.execute("SELECT COUNT(*) FROM Soundtracks")
+    cur.execute("SELECT COUNT(*) FROM soundtracks")
     soundtracks_count = cur.fetchone()[0]
 
     if soundtracks_count >= limit:
@@ -81,36 +99,42 @@ def fetch_soundtrack_data(cur, conn, token, title):
     while soundtracks_count < limit:
         sp = spotipy.Spotify(auth=token)
         try:
+            for title in movies_list:
             # Search for albums by title
-            results = sp.search(q=title+ " year:2023", type="album", limit=25, offset=offset)
-            albums = results["albums"]["items"]
+                results = sp.search(q=title, type="album", limit=1, offset=offset)
+                albums = results["albums"]["items"]
 
-            if not albums:
-                print("No more soundtracks found.")
-                break
+                if not albums:
+                    print(f"Soundtrack not found for {title}.")
+                    continue
 
-            for album in albums:
-                movie_title =title
-                album_name = album["name"]
-                artists = ", ".join(artist["name"] for artist in album["artists"])
-                genre = "Soundtrack"  # Assuming all are soundtracks
+                else:
+                    for album in albums: 
+                        movie_title =title
+                        soundtrack_name = album["name"]
+                        #artists = ", ".join(artist["name"] for artist in album["artists"])
+                        genre = "Soundtrack"  # Assuming all are soundtracks
 
+                        # Fetch the movie_id from the Movies table
+                        cur.execute("SELECT id FROM Movies WHERE title = ?", (movie_title,))
+                        movie_id_result = cur.fetchone()
+
+                        if movie_id_result:
+                            movie_id = movie_id_result[0]
                 # Insert into the database
-                try:
-                    cur.execute("""
-                        INSERT OR IGNORE INTO Soundtracks (movie_title, album_name, artists, genre)
-                        VALUES (?,?, ?, ?)
-                    """, (movie_title,album_name, artists, genre))
-                    soundtracks_count += 1
-                    print(f"Inserted: {album_name}")
+                            try:
+                                cur.execute("""
+                                    INSERT OR IGNORE INTO Soundtracks (movie_title, album_name, movie_id, genre)
+                                    VALUES (?,?, ?, ?)
+                                """, (movie_title, soundtrack_name, movie_id, genre))
+                                soundtracks_count += 1
+                                print(f"Inserted: {soundtrack_name}")
 
-                    if soundtracks_count >= limit:
-                        break
-                except Exception as e:
-                    print(f"Error inserting soundtrack: {album_name}. Error: {e}")
+                            except Exception as e:
+                                print(f"Error inserting soundtrack: {soundtrack_name}. Error: {e}")
             
             # Increase offset for the next batch
-            offset += 50
+                offset += 50
         except Exception as e:
             print(f"Error fetching data from Spotify: {e}")
             break
@@ -132,7 +156,10 @@ def soundtrack_query(cur):
 #Step 5: Define main function
 def main():
     token = get_token()
+    cur, conn = set_up_database("movies.db")
     cur, conn = create_soundtrack_and_song_tables("movies.db")
+    movies = fetch_movies_by_year(cur, conn, start_year=2015, limit=25)
+    fetch_soundtrack_data(cur, conn, token, movies)
     # Example movie titles
     conn.close()
                                                                                                                                                               
