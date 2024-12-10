@@ -2,14 +2,16 @@ import os
 import sqlite3
 import requests
 
-def remove_database(db_name):
-    if os.path.exists(db_name):
-        os.remove(db_name)
-        print(f"Database '{db_name}' has been removed to start fresh.")
-    else:
-        print(f"Database '{db_name}' does not exist, no need to remove.")
-
 def set_up_database(db_name):
+    """
+    Sets up the SQLite database and creates the Movies table if it doesn't exist.
+    
+    Arguments:
+    db_name (str): The name of the database file.
+    
+    Returns:
+    tuple: A cursor and connection object for the database.
+    """
     conn = sqlite3.connect(db_name)
     cur = conn.cursor()
     cur.execute("""
@@ -26,6 +28,15 @@ def set_up_database(db_name):
     return cur, conn
 
 def fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25):
+    """
+    Fetches movies from the year 2024 using the OMDB API and stores them in the database.
+    
+    Arguments:
+    cur (sqlite3.Cursor): The database cursor.
+    conn (sqlite3.Connection): The database connection.
+    max_total (int): The maximum total number of movies to store in the database.
+    fetch_limit (int): The maximum number of movies to fetch in a single run.
+    """
     base_url = "http://www.omdbapi.com/"
     api_key = "25781136"  # Replace with your API key
     year = 2024
@@ -100,8 +111,10 @@ def fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25):
     print(f"Fetch process completed. Current movie count: {final_count}")
 
 def main():
+    """
+    The main function that orchestrates the database setup and movie fetching process.
+    """
     db_name = "movies.db"
-    remove_database(db_name)
     cur, conn = set_up_database(db_name)
     fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25)
     conn.close()
