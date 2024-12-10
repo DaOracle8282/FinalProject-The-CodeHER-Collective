@@ -1,15 +1,13 @@
-
 import requests
 import sqlite3
 import os
 from datetime import datetime
-from spotify import fetch_spotify_data, get_token  # Assuming fetch_spotify_data and get_token exists in spotify.py
-from news import fetch_news_articles  # Assuming fetch_news_articles exists in news.py
+from spotify import fetch_spotify_data, get_token
+from news import fetch_news_articles
 
-# Step 1: Set Up the Database
 def set_up_database(db_name):
     """
-    Sets up the SQLite database and creates the Movies table.
+    Sets up the SQLite database and creates the Movies table if it doesn't exist.
 
     Parameters:
     - db_name (str): Name of the SQLite database file.
@@ -20,8 +18,6 @@ def set_up_database(db_name):
     path = os.path.dirname(os.path.abspath(__file__))
     conn = sqlite3.connect(os.path.join(path, db_name))
     cur = conn.cursor()
-    # Drop the table to ensure only fresh data is stored
-    cur.execute("DROP TABLE IF EXISTS Movies")
     cur.execute("""
         CREATE TABLE IF NOT EXISTS Movies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,7 +31,6 @@ def set_up_database(db_name):
     conn.commit()
     return cur, conn
 
-# Step 2: Fetch Movies by Year
 def fetch_movies_by_year(cur, conn, start_year=2015, limit=100):
     """
     Fetches movies from the OMDb API based on year and inserts them into the database.
@@ -52,11 +47,20 @@ def fetch_movies_by_year(cur, conn, start_year=2015, limit=100):
     base_url = "http://www.omdbapi.com/"
     api_key = "25781136"  # Replace with your API key
     current_year = datetime.now().year
+
+    cur.execute("SELECT COUNT(*) FROM Movies")
+    existing_count = cur.fetchone()[0]
+    remaining = limit - existing_count
+    
+    if remaining <= 0:
+        print(f"Database already contains {existing_count} movies. Limit of {limit} reached.")
+        return
+
     movies_count = 0  # Track the number of movies added
 
     for year in range(start_year, current_year + 1):
         page = 1
-        while movies_count < limit:
+        while movies_count < remaining:
             response = requests.get(base_url, params={
                 "s": "movie",
                 "type": "movie",
@@ -70,7 +74,6 @@ def fetch_movies_by_year(cur, conn, start_year=2015, limit=100):
                 data = response.json()
                 if data.get("Response") == "True":
                     for movie in data.get("Search", []):
-                        # Fetch full movie details
                         full_data = requests.get(base_url, params={
                             "i": movie.get("imdbID"),
                             "apikey": api_key
@@ -85,7 +88,6 @@ def fetch_movies_by_year(cur, conn, start_year=2015, limit=100):
                             if imdb_rating == "N/A":
                                 imdb_rating = 0.0
 
-                            # Ensure critical fields are not missing
                             if not title or not year:
                                 print(f"Skipping movie due to missing data: {full_data}")
                                 continue
@@ -97,7 +99,7 @@ def fetch_movies_by_year(cur, conn, start_year=2015, limit=100):
                                 """, (title, int(year), genre, country, float(imdb_rating)))
                                 print(f"Inserting movie: {title} ({year})")
                                 movies_count += 1
-                                if movies_count >= limit:
+                                if movies_count >= remaining:
                                     break
                             except Exception as e:
                                 print(f"Error inserting movie: {title}. Error: {e}")
@@ -111,7 +113,6 @@ def fetch_movies_by_year(cur, conn, start_year=2015, limit=100):
 
     conn.commit()
 
-# Step 3: Query Movies from the Database
 def query_movies(cur):
     """
     Queries the Movies table and retrieves all records ordered by year and IMDb rating.
@@ -129,82 +130,89 @@ def query_movies(cur):
     """)
     return cur.fetchall()
 
-# Step 4: Fetch Spotify Data
-def integrate_spotify(cur, con, token, movies):
+def integrate_spotify(cur, conn, token, movies):
     """
     Fetches Spotify data related to movie titles.
 
     Parameters:
-    - movies (list): List of movie titles.
+    - cur: Database cursor.
+    - conn: Database connection.
+    - token: Spotify API token.
+    - movies (list): List of movie tuples.
 
     Returns:
     - dict: Spotify data related to movies.
     """
     spotify_data = {}
     for movie in movies:
-        title = movie[0]  # Get movie title
-        spotify_info = fetch_spotify_data(cur, con,token,title)  # Fetch data from Spotify
-        if spotify_info:
-            spotify_data[title] = spotify_info
+        title = movie[0]
+        try:
+            spotify_info = fetch_spotify_data(cur, conn, token, title)
+            if spotify_info:
+                spotify_data[title] = spotify_info
+        except Exception as e:
+            print(f"Error fetching Spotify data for {title}: {e}")
     return spotify_data
 
-# Step 5: Fetch News Articles
 def integrate_news(movies):
     """
     Fetches news articles related to movie titles.
 
     Parameters:
-    - movies (list): List of movie titles.
+    - movies (list): List of movie tuples.
 
     Returns:
     - dict: News articles related to movies.
     """
     news_data = {}
     for movie in movies:
-        title = movie[0]  # Get movie title
-        news_info = fetch_news_articles(title)  # Fetch data from NewsAPI
-        if news_info:
-            news_data[title] = news_info
+        title = movie[0]
+        try:
+            news_info = fetch_news_articles(title)
+            if news_info:
+                news_data[title] = news_info
+        except Exception as e:
+            print(f"Error fetching news articles for {title}: {e}")
     return news_data
 
-
-# Step 6: Main Function
 def main():
     """
     Orchestrates the setup, fetching, and querying of movies, and integrates data from Spotify and NewsAPI.
     """
-    # Step 6.1: Set up the database
     cur, conn = set_up_database("movies.db")
-
-    # Step 6.2: Fetch movies starting from 2015 and limited to 100
     fetch_movies_by_year(cur, conn, start_year=2015, limit=100)
-
-    # Step 6.3: Query the movies from the database
     movies = query_movies(cur)
     print(f"\nTotal Movies Fetched: {len(movies)}\n")
     for movie in movies:
         print(movie)
 
-
-    # Step 6.4: Get token and Integrate Spotify data
     token = get_token()
-    spotify_data = integrate_spotify(cur,conn, token, movies )
+    spotify_data = integrate_spotify(cur, conn, token, movies)
     print("\nSpotify Data:")
     for title, data in spotify_data.items():
         print(f"{title}: {data}")
 
-    # Step 6.5: Integrate NewsAPI data
     news_data = integrate_news(movies)
     print("\nNews Articles:")
     for title, articles in news_data.items():
         print(f"{title}: {articles}")
 
-    # Step 6.6: Close the database connection
+    # Basic data analysis
+    print("\nData Analysis:")
+    print(f"Total number of movies: {len(movies)}")
+    avg_rating = sum(movie[4] for movie in movies) / len(movies)
+    print(f"Average IMDb rating: {avg_rating:.2f}")
+    
+    genre_count = {}
+    for movie in movies:
+        genres = movie[2].split(', ')
+        for genre in genres:
+            genre_count[genre] = genre_count.get(genre, 0) + 1
+    print("Top 5 genres:")
+    for genre, count in sorted(genre_count.items(), key=lambda x: x[1], reverse=True)[:5]:
+        print(f"  {genre}: {count}")
+
     conn.close()
 
-# Step 7: Run the Main Function
 if __name__ == "__main__":
     main()
-
-
-
