@@ -1,20 +1,16 @@
-import requests
-import sqlite3
 import os
-from datetime import datetime
+import sqlite3
+import requests
 
-# New function to remove unnecessary database
 def remove_database(db_name):
     if os.path.exists(db_name):
         os.remove(db_name)
-        print(f"Unnecessary database file '{db_name}' has been removed.")
+        print(f"Database '{db_name}' has been removed to start fresh.")
     else:
-        print(f"Database file '{db_name}' does not exist.")
+        print(f"Database '{db_name}' does not exist, no need to remove.")
 
-# Step 1: Set Up the Database
 def set_up_database(db_name):
-    path = os.path.dirname(os.path.abspath(__file__))
-    conn = sqlite3.connect(os.path.join(path, db_name))
+    conn = sqlite3.connect(db_name)
     cur = conn.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS Movies (
@@ -29,15 +25,7 @@ def set_up_database(db_name):
     conn.commit()
     return cur, conn
 
-# Function to clear the Movies table
-def clear_movies_table(cur, conn):
-    cur.execute("DELETE FROM Movies")
-    conn.commit()
-    print("All movies have been deleted from the database.")
-
-# Step 2: Fetch Movies for 2024
 def fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25):
-    print(f"Attempting to fetch up to {fetch_limit} movies, with a max total of {max_total}")
     base_url = "http://www.omdbapi.com/"
     api_key = "25781136"  # Replace with your API key
     year = 2024
@@ -50,7 +38,6 @@ def fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25):
         print(f"Database already contains {current_count} movies. Limit of {max_total} reached.")
         return
 
-<<<<<<< HEAD
     remaining = min(max_total - current_count, fetch_limit)
     page = 1
 
@@ -73,68 +60,6 @@ def fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25):
             break
 
         for movie in data.get("Search", []):
-            if remaining <= 0:
-=======
-    for year in range(start_year, current_year + 1):
-        while movies_count < limit:
-            response = requests.get(base_url, params={
-                "s": "movie",  # Broad search term 
-                "type": "movie",
-                "y": year,
-                "page": page,
-                "apikey": api_key
-            })
-            print(f"Fetching year: {year}, page: {page}")
-
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("Response") == "True":
-                    for movie in data.get("Search", []):
-                        # Fetch full movie details
-                        full_data = requests.get(base_url, params={
-                            "i": movie.get("imdbID"),
-                            "apikey": api_key
-                        }).json()
-
-                        if full_data.get("Response") == "True" and "United States" in full_data.get("Country", ""):
-                            title = full_data.get("Title")
-                            year = full_data.get("Year")
-                            genre = full_data.get("Genre")
-                            country = full_data.get("Country")
-                            imdb_rating = full_data.get("imdbRating", "N/A")
-
-
-                            movies_list.append(title) #adds movie title to movie list 
-
-                            if imdb_rating == "N/A":
-                                imdb_rating = 0.0  # Default missing ratings to 0.0
-
-                            # Ensure critical fields are not missing
-                            if not title or not year:
-                                print(f"Skipping movie due to missing data: {full_data}")
-                                continue
-
-                            try:
-                                # Insert movie data into the database
-                                cur.execute("""
-                                    INSERT OR IGNORE INTO Movies (title, year, genre, country, imdb_rating)
-                                    VALUES (?, ?, ?, ?, ?)
-                                """, (title, int(year), genre, country, float(imdb_rating)))
-                                print(f"Inserting movie: {title} ({year})")
-                                movies_count += 1
-                                if movies_count >= limit:
-                                    break
-                            except Exception as e:
-                                print(f"Error inserting movie: {title}. Error: {e}")
-                    page += 1
-                else:
-                    print(f"No more movies found for year: {year}")
-                    break
-            else:
-                print(f"Error fetching movies for year {year}: {response.status_code}")
->>>>>>> 426e9e7ef7d463d62bdcd878966e25d55e5c8631
-                break
-
             full_data = requests.get(base_url, params={
                 "i": movie.get("imdbID"),
                 "apikey": api_key
@@ -155,16 +80,11 @@ def fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25):
                 try:
                     cur.execute("""
                         INSERT OR IGNORE INTO Movies (title, year, genre, country, imdb_rating)
-                        SELECT ?, ?, ?, ?, ?
-                        WHERE (SELECT COUNT(*) FROM Movies) < ?
-                    """, (title, int(year), genre, country, float(imdb_rating), max_total))
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (title, int(year), genre, country, float(imdb_rating)))
                     conn.commit()
 
-                    cur.execute("SELECT COUNT(*) FROM Movies")
-                    updated_count = cur.fetchone()[0]
-
-                    if updated_count > current_count:
-                        current_count = updated_count
+                    if cur.rowcount > 0:
                         remaining -= 1
                         print(f"Inserted: {title} ({year})")
 
@@ -175,41 +95,16 @@ def fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25):
 
         page += 1
 
-    print(f"Fetch process completed. Current movie count: {current_count}")
+    cur.execute("SELECT COUNT(*) FROM Movies")
+    final_count = cur.fetchone()[0]
+    print(f"Fetch process completed. Current movie count: {final_count}")
 
-# Step 3: Query Movies from the Database
-def query_movies(cur):
-    print("Querying movies from the database...")
-    cur.execute("""
-        SELECT title, year, genre, country, imdb_rating
-        FROM Movies
-        ORDER BY imdb_rating DESC
-    """)
-    results = cur.fetchall()
-    print(f"Found {len(results)} movies in the database.")
-    return results
-
-# Step 4: Main Function
 def main():
-    print("Starting the movie fetching process...")
-    
-    # Remove unnecessary database
-    remove_database("movies2024.db")
-    
-    cur, conn = set_up_database("movies.db")
-    print("Database connection established.")
-
-    # Fetch movies for 2024, limited to 25 per run, with a maximum of 100 total
+    db_name = "movies.db"
+    remove_database(db_name)
+    cur, conn = set_up_database(db_name)
     fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25)
-
-    movies = query_movies(cur)
-    print(f"\nTotal Movies Fetched: {len(movies)}\n")
-    for movie in movies:
-        print(movie)
-
     conn.close()
-    print("Database connection closed. Script execution completed.")
 
-# Step 5: Run the Main Function
 if __name__ == "__main__":
     main()
