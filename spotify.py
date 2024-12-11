@@ -1,4 +1,5 @@
 import sqlite3
+import requests
 import spotipy
 import spotipy.oauth2 as oauth2
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -79,7 +80,7 @@ def create_soundtrack_and_song_tables(db_name):
                genre TEXT,
                FOREIGN KEY (movie_id) REFERENCES movie(id)
                )
-                """)
+                """) 
    
    cur.execute("""CREATE TABLE IF NOT EXISTS soundtrack_songs (
                id INTEGER PRIMARY KEY,
@@ -93,7 +94,8 @@ def create_soundtrack_and_song_tables(db_name):
 
 
 #Step 3: Request movie soundtrack data from Spotipy and store in soundtrack table
-def fetch_soundtrack_data(cur, conn, token, movies_list):
+def fetch_soundtrack_data(cur, conn, token, movies_list, 
+                          ):
     offset = 0
     limit = 100
 
@@ -122,7 +124,7 @@ def fetch_soundtrack_data(cur, conn, token, movies_list):
                         movie_title =title
                         soundtrack_name = album["name"]
                         #artists = ", ".join(artist["name"] for artist in album["artists"])
-                        genre = "Soundtrack"  # Assuming all are soundtracks
+                        genre = requests.get()  # Assuming all are soundtracks
 
                         # Fetch the movie_id from the Movies table
                         cur.execute("SELECT id FROM Movies WHERE title = ?", (movie_title,))
@@ -138,6 +140,7 @@ def fetch_soundtrack_data(cur, conn, token, movies_list):
                                 """, (movie_title, soundtrack_name, movie_id, genre))
                                 soundtracks_count += 1
                                 print(f"Inserted: {soundtrack_name}")
+                                print(title| movie_id| soundtrack_name| genre)
 
                             except Exception as e:
                                 print(f"Error inserting soundtrack: {soundtrack_name}. Error: {e}")
@@ -195,6 +198,7 @@ def fetch_soundtrack_songs_data(cur, conn, token):
                         VALUES (?, ?)
                     """, (song_title, soundtrack_id))
                     print(f"Inserted song: {song_title} into soundtrack ID: {soundtrack_id}")
+                    
                 except Exception as e:
                     print(f"Error inserting song: {song_title}. Error: {e}")
 
@@ -224,12 +228,8 @@ def main():
     create_soundtrack_and_song_tables("movies.db")
     fetch_soundtrack_data(cur, conn, token, movies)
     fetch_soundtrack_songs_data(cur, conn, token)
-
     conn.close()
-                                                                                                                                                              
-'''
-   soundtrack_query(cur)
-'''
+                                                                                                                                                            
 
 # Step 6: Run the main function
 if __name__ == "__main__":
