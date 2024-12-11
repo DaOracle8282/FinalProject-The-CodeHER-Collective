@@ -16,50 +16,41 @@ def genre_bar_chart(cur):
     genres = [row[0] for row in data]
     counts = [row[1] for row in data]
 
-    plt.figure(figsize=(10, 6))
-    plt.bar(genres, counts)
-    plt.title("Top 5 Movie Genres")
-    plt.xlabel("Genres")
-    plt.ylabel("Number of Movies")
-    plt.show()
-
-def imdb_ratings_scatter(cur):
-    """
-    Generates a scatter plot for IMDb ratings versus release year.
-    """
-    cur.execute("""
-        SELECT year, imdb_rating
-        FROM Movies
-        WHERE imdb_rating > 0
-    """)
-    data = cur.fetchall()
-    years = [row[0] for row in data]
-    ratings = [row[1] for row in data]
+    # Adjust genre names to stack words vertically
+    formatted_genres = ['\n'.join(genre.split()) for genre in genres]
 
     plt.figure(figsize=(10, 6))
-    plt.scatter(years, ratings, alpha=0.6)
-    plt.title("IMDb Ratings vs. Release Year")
-    plt.xlabel("Year")
-    plt.ylabel("IMDb Rating")
+    plt.bar(formatted_genres, counts, color='maroon')  # Add color
+    plt.title("Top 5 Movie Genres in 2024", fontweight="bold")
+    plt.xlabel("Genres", fontweight="bold")
+    plt.ylabel("Number of Movies", fontweight="bold")
+    plt.tight_layout()  # Adjust layout to fit everything
     plt.show()
 
-def genre_pie_chart(cur):
+
+def genre_horizontal_bar_chart(cur):
     """
-    Generates a pie chart for the proportion of movies in each genre.
+    Generates a horizontal bar chart for the proportion of movies in each genre.
     """
     cur.execute("""
         SELECT genre, COUNT(*) as count
         FROM Movies
         GROUP BY genre
+        ORDER BY count DESC
     """)
     data = cur.fetchall()
     genres = [row[0] for row in data]
     counts = [row[1] for row in data]
 
-    plt.figure(figsize=(8, 8))
-    plt.pie(counts, labels=genres, autopct="%1.1f%%", startangle=140)
-    plt.title("Genre Distribution")
+    plt.figure(figsize=(10, 8))
+    plt.barh(genres, counts, color='black')  # Add color
+    plt.title("Number of Movies By Genre", fontweight="bold")
+    plt.xlabel("Number of Movies", fontweight="bold")
+    plt.ylabel("Genres", fontweight="bold")
+    plt.gca().invert_yaxis()  # Invert to show highest count on top
+    plt.tight_layout()
     plt.show()
+
 
 def main():
     """
@@ -70,10 +61,10 @@ def main():
 
     # Generate visualizations
     genre_bar_chart(cur)
-    imdb_ratings_scatter(cur)
-    genre_pie_chart(cur)
+    genre_horizontal_bar_chart(cur)
 
     conn.close()
+
 
 if __name__ == "__main__":
     main()
