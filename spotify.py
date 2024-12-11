@@ -2,7 +2,14 @@ import sqlite3
 import spotipy
 import spotipy.oauth2 as oauth2
 import os
-
+"""
+Things to complete: 
+[] search for only 25 albums at a time
+[] add only 25 songs at a time
+[] filter for genre if possible and create visual for top 5 most popular movie soundtrack genres
+[] if not create visual for top 5  movies with the longest album length and/or longest average song length
+[] DONE!
+"""
 #Step 1: Set up connection to Spotipy
 def get_token():
     """
@@ -77,9 +84,13 @@ def fetch_soundtrack_data(cur, conn, token):
     """
     sp = spotipy.Spotify(auth=token)
     movie_total = 0
+    max_inserts = 25 
 
     # Fetch movies from 2024
-    cur.execute("SELECT id, title FROM Movies WHERE year = 2024")
+    cur.execute("""SELECT id, title 
+                FROM Movies 
+                WHERE year = 2024
+                AND id NOT IN (SELECT movie_id FROM soundtracks)""")
     movies = cur.fetchall()
 
     if not movies:
@@ -89,6 +100,9 @@ def fetch_soundtrack_data(cur, conn, token):
     print("Fetching soundtracks for movies from 2024...")
 
     for movie_id, movie_title in movies:
+        if movie_total >= max_inserts:
+            print(f"Reached the limit of {max_inserts} rows for this execution. Stopping fetch operation.")
+            break
         try:
             # Search for albums on Spotify using the movie title
             results = sp.search(q=movie_title, type="album", limit=1)
@@ -102,6 +116,10 @@ def fetch_soundtrack_data(cur, conn, token):
             album = albums[0]
             soundtrack_name = album["name"]
             genre = "Soundtrack"
+
+            if movie_title.lower() not in soundtrack_name.lower():
+                print(f"Album '{soundtrack_name}' does not match the movie title '{movie_title}'. Skipping.")
+                continue
 
             try:
                 cur.execute("""
@@ -131,17 +149,23 @@ def fetch_soundtrack_songs_data(cur, conn, token):
     Returns:
     - None
     """
+    song_total = 0
+    max_songs = 25
     sp = spotipy.Spotify(auth=token)
 
     # Fetch all soundtracks from the database
-    cur.execute("SELECT id, soundtrack_name FROM soundtracks")
+    cur.execute("""SELECT id, soundtrack_name 
+                FROM soundtracks
+                WHERE id NOT IN (SELECT soundtrack_id FROM soundtrack_songs)""")
     soundtracks = cur.fetchall()
 
     if not soundtracks:
         print("No soundtracks found in the database.")
         return
-
     for soundtrack_id, soundtrack_name in soundtracks:
+        if song_total >= max_songs:
+            print(f"Reached the limit of {song_total} rows for this execution. Stopping fetch operation.")
+            return
         try:
             # Search for the album by name
             results = sp.search(q=soundtrack_name, type="album", limit=1)
@@ -166,12 +190,15 @@ def fetch_soundtrack_songs_data(cur, conn, token):
                         VALUES (?, ?)
                     """, (song_title, soundtrack_id))
                     print(f"Inserted song: {song_title} in soundtrack ID: {soundtrack_id}")
+                    song_total +=1
                     conn.commit() 
                 except Exception as e:
                     print(f"Error inserting song: {song_title}. Error: {e}")
         except Exception as e:
             print(f"Error fetching songs for soundtrack: {soundtrack_name}. Error: {e}")
-
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(f"TOTAL SONGS INSERTED INTO SOUNDTRACK_SONGS TABLE: {song_total}")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 #Step 5: Define main function
 def main():
