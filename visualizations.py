@@ -52,6 +52,37 @@ def genre_horizontal_bar_chart(cur):
     plt.show()
 
 
+def top_soundtracks_by_song_count(cur):
+    """
+    Generates a horizontal bar chart for the top 5 soundtracks by song count.
+    """
+    cur.execute("""
+        SELECT s.soundtrack_name, COUNT(ss.song_title) as song_count
+        FROM soundtracks s
+        JOIN soundtrack_songs ss ON s.id = ss.soundtrack_id
+        GROUP BY s.soundtrack_name
+        ORDER BY song_count DESC
+        LIMIT 5
+    """)
+    data = cur.fetchall()
+    
+    if not data:
+        print("No soundtrack data available for visualization.")
+        return
+
+    soundtracks = [row[0] for row in data]
+    song_counts = [row[1] for row in data]
+
+    plt.figure(figsize=(10, 6))
+    plt.barh(soundtracks, song_counts, color='navy')  # Add color
+    plt.title("Top 5 Soundtracks by Song Count", fontweight="bold")
+    plt.xlabel("Number of Songs", fontweight="bold")
+    plt.ylabel("Soundtracks", fontweight="bold")
+    plt.gca().invert_yaxis()  # Show highest count on top
+    plt.tight_layout()
+    plt.show()
+
+
 def main():
     """
     Main function to generate visualizations.
@@ -62,6 +93,7 @@ def main():
     # Generate visualizations
     genre_bar_chart(cur)
     genre_horizontal_bar_chart(cur)
+    top_soundtracks_by_song_count(cur)  # New visualization for soundtracks
 
     conn.close()
 
