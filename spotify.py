@@ -53,6 +53,7 @@ def create_soundtrack_and_song_tables(db_name):
                movie_id INTEGER,
                soundtrack_name TEXT UNIQUE, 
                genre TEXT,
+               total_duration TEXT,
                FOREIGN KEY (movie_id) REFERENCES movie(id)
                )
                 """) 
@@ -61,6 +62,7 @@ def create_soundtrack_and_song_tables(db_name):
                id INTEGER PRIMARY KEY,
                song_title TEXT,
                soundtrack_id INTEGER,
+               song_length TEXT,
                FOREIGN KEY (soundtrack_id) REFERENCES soundtracks(id))
                """)
    conn.commit()
@@ -126,12 +128,18 @@ def fetch_soundtrack_data(cur, conn, token):
             album_details = sp.album(album_id)
             genres = album_details.get("genres", [])
             genre = genres[0] if genres else "Unknown"
+
+            tracks = sp.album_tracks(album_id)["items"]
+            total_duration_ms = sum(track["duration_ms"] for track in tracks)  # Sum up track durations
+            total_duration_minutes = total_duration_ms // 60000  # Convert to minutes
+            total_duration_seconds = (total_duration_ms % 60000) // 1000  # Remainder in seconds
+            total_duration = f"00:{total_duration_minutes:02d}:{total_duration_seconds:02d}"
             try:
             
                 cur.execute("""
-                    INSERT OR IGNORE INTO soundtracks (movie_title, movie_id, soundtrack_name, genre)
-                    VALUES (?, ?, ?, ?)
-                """, (movie_title, movie_id, soundtrack_name, genre))
+                    INSERT OR IGNORE INTO soundtracks (movie_title, movie_id, soundtrack_name, genre, total_duration)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (movie_title, movie_id, soundtrack_name, genre, total_duration))
                 conn.commit()
                 print(f"Inserted soundtrack: {soundtrack_name} for movie: {movie_title}")
                 movie_total +=1
@@ -142,6 +150,7 @@ def fetch_soundtrack_data(cur, conn, token):
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     print(f"TOTAL MOVIES INSERTED INTO SOUNDTRACKS TABLE: {movie_total}")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
 def fetch_soundtrack_songs_data(cur, conn, token): 
     """
     Fetches songs for each soundtrack in the soundtracks table 
@@ -191,15 +200,19 @@ def fetch_soundtrack_songs_data(cur, conn, token):
                     print(f"Reached the limit of {song_total} rows for this execution. Stopping fetch operation.")
                     return
                 song_title = track["name"]
+                song_length_ms = track["duration_ms"]
+                song_length_minutes = song_length_ms // 60000  # Convert to minutes
+                song_length_seconds = (song_length_ms % 60000) // 1000  # Remainder in seconds
+                song_length = f"00:{song_length_minutes:02d}:{song_length_seconds:02d}"
 
                 # Insert the song into the soundtrack_songs table
                 try:
                     cur.execute("""
-                        INSERT OR IGNORE INTO soundtrack_songs (song_title, soundtrack_id)
-                        VALUES (?, ?)
-                    """, (song_title, soundtrack_id))
-                    print(f"Inserted song: {song_title} in soundtrack ID: {soundtrack_id}")
-                    song_total +=1
+                        INSERT OR IGNORE INTO soundtrack_songs (song_title, soundtrack_id, song_length)
+                        VALUES (?, ?, ?)
+                    """, (song_title, soundtrack_id, song_length))
+                    print(f"Inserted song: {song_title} in soundtrack ID: {soundtrack_id}, length: {song_length}")
+                    song_total += 1
                     conn.commit() 
                 except Exception as e:
                     print(f"Error inserting song: {song_title}. Error: {e}")
