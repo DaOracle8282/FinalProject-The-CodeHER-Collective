@@ -27,6 +27,20 @@ def set_up_database(db_name):
     conn.commit()
     return cur, conn
 
+def movie_exists(cur, title):
+    """
+    Checks if a movie with the given title already exists in the database.
+
+    Arguments:
+    cur (sqlite3.Cursor): The database cursor.
+    title (str): The title of the movie to check.
+
+    Returns:
+    bool: True if the movie exists, False otherwise.
+    """
+    cur.execute("SELECT 1 FROM Movies WHERE title = ?", (title,))
+    return cur.fetchone() is not None
+
 def fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25):
     """
     Fetches movies from the year 2024 using the OMDB API and stores them in the database.
@@ -88,9 +102,14 @@ def fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25):
                 if not title or not year:
                     continue
 
+                # Check for duplicates in the database
+                if movie_exists(cur, title):
+                    print(f"Skipping duplicate movie: {title}")
+                    continue
+
                 try:
                     cur.execute("""
-                        INSERT OR IGNORE INTO Movies (title, year, genre, country, imdb_rating)
+                        INSERT INTO Movies (title, year, genre, country, imdb_rating)
                         VALUES (?, ?, ?, ?, ?)
                     """, (title, int(year), genre, country, float(imdb_rating)))
                     conn.commit()
