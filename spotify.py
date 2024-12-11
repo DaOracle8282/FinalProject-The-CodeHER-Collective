@@ -131,9 +131,12 @@ def fetch_soundtrack_data(cur, conn, token):
 
             tracks = sp.album_tracks(album_id)["items"]
             total_duration_ms = sum(track["duration_ms"] for track in tracks)  # Sum up track durations
-            total_duration_minutes = total_duration_ms // 60000  # Convert to minutes
-            total_duration_seconds = (total_duration_ms % 60000) // 1000  # Remainder in seconds
-            total_duration = f"00:{total_duration_minutes:02d}:{total_duration_seconds:02d}"
+            total_duration_hours = total_duration_ms // 3600000  # 1 hour = 3,600,000 ms
+            remaining_minutes = (total_duration_ms % 3600000) // 60000  # Remaining minutes after hours
+            remaining_seconds = (total_duration_ms % 60000) // 1000  # Remaining seconds after minutes
+
+            # Format total duration as HH:MM:SS
+            total_duration = f"{total_duration_hours:02d}:{remaining_minutes:02d}:{remaining_seconds:02d}"
             try:
             
                 cur.execute("""
