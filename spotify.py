@@ -5,7 +5,7 @@ import os
 """
 Things to complete: 
 [X] search for only 25 albums at a time
-[] add only 25 songs at a time
+[X] add only 25 songs at a time
 [] filter for genre if possible and create visual for top 5 most popular movie soundtrack genres
 [] if not create visual for top 5  movies with the longest album length and/or longest average song length
 [] DONE!
@@ -115,13 +115,19 @@ def fetch_soundtrack_data(cur, conn, token):
             # Insert soundtrack into the 'soundtracks' table
             album = albums[0]
             soundtrack_name = album["name"]
-            genre = "Soundtrack"
 
             if movie_title.lower() not in soundtrack_name.lower():
                 print(f"Album '{soundtrack_name}' does not match the movie title '{movie_title}'. Skipping.")
                 continue
 
+            #Retrieve Genre of Album from search
+
+            album_id = album["id"]
+            album_details = sp.album(album_id)
+            genres = album_details.get("genres", [])
+            genre = genres[0] if genres else "Unknown"
             try:
+            
                 cur.execute("""
                     INSERT OR IGNORE INTO soundtracks (movie_title, movie_id, soundtrack_name, genre)
                     VALUES (?, ?, ?, ?)
@@ -199,10 +205,6 @@ def fetch_soundtrack_songs_data(cur, conn, token):
                     print(f"Error inserting song: {song_title}. Error: {e}")
         except Exception as e:
             print(f"Error fetching songs for soundtrack: {soundtrack_name}. Error: {e}")
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    print(f"TOTAL SONGS INSERTED INTO SOUNDTRACK_SONGS TABLE: {song_total}")
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
 #Step 5: Define main function
 def main():
     db_name = "movies.db"
