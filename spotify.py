@@ -4,7 +4,7 @@ import spotipy.oauth2 as oauth2
 import os
 """
 Things to complete: 
-[] search for only 25 albums at a time
+[X] search for only 25 albums at a time
 [] add only 25 songs at a time
 [] filter for genre if possible and create visual for top 5 most popular movie soundtrack genres
 [] if not create visual for top 5  movies with the longest album length and/or longest average song length
@@ -181,6 +181,9 @@ def fetch_soundtrack_songs_data(cur, conn, token):
             tracks_data = sp.album_tracks(album_id)
 
             for track in tracks_data["items"]:
+                if song_total >= max_songs:
+                    print(f"Reached the limit of {song_total} rows for this execution. Stopping fetch operation.")
+                    return
                 song_title = track["name"]
 
                 # Insert the song into the soundtrack_songs table
