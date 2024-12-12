@@ -31,20 +31,30 @@ def setup_articles_table(db_name):
                 source_name TEXT,
                 published_date TEXT,
                 article_content TEXT,
-                movie_id INTEGER,
                 UNIQUE(movie_title, article_title, published_date)
+<<<<<<< HEAD
                 FOREIGN KEY (movie_id) REFERENCES Movies(id)
+=======
+>>>>>>> dfe1bd92ce568ebb1dfa50abeac956b0972d5173
             )
         """
         )
         conn.commit()
     except sqlite3.Error as e:
         print(f"Error setting up Articles table: {e}")
+<<<<<<< HEAD
     return cur, conn
 
 
 # Fetch and store articles from NewsAPI
 def fetch_articles(cur,conn, fetch_limit=25):
+=======
+    return conn,cur
+
+
+# Fetch and store articles from NewsAPI
+def fetch_articles(cur, conn, fetch_limit=25):
+>>>>>>> dfe1bd92ce568ebb1dfa50abeac956b0972d5173
 
     """
     Fetches articles related to a specific movie title from NewsAPI and stores them in the database.
@@ -127,6 +137,52 @@ def fetch_articles(cur,conn, fetch_limit=25):
                 print(f"Network error while fetching articles for '{movie_title}': {e}")
                 break
 
+<<<<<<< HEAD
+=======
+#Analyze article counts per movie
+def analyze_article_counts(con, cur):
+    """
+    Analyzes the number of articles for each movie.
+
+    Returns:
+    - results (list of tuples): Each tuple contains the movie title and its article count.
+    """
+    try:
+        cur.execute("""
+            SELECT movie_title, COUNT(*) as article_count
+            FROM Articles
+            GROUP BY movie_title
+            ORDER BY article_count DESC;
+        """)
+        return cur.fetchall()
+    except sqlite3.Error as e:
+        print(f"Error analyzing article counts: {e}")
+        return []
+    
+
+#Perform database join and analysis
+def analyze_joined_data(con,cur):
+    """
+    Joins the Movies and Articles tables to analyze data.
+    Returns:
+    - results (list of tuples): Each tuple contains the movie title, IMDb rating, and article count.
+    """
+    try:
+        
+        cur.execute("""
+            SELECT Movies.title, Movies.imdb_rating, COUNT(Articles.id) as article_count
+            FROM Movies 
+            JOIN Articles  ON Movies.title = Articles.movie_title
+            GROUP BY Movie.title
+            ORDER BY article_count DESC;
+        """)
+        results = cur.fetchall()
+        return results
+    except sqlite3.Error as e:
+        print(f"Error analyzing joined data: {e}")
+        return []
+
+>>>>>>> dfe1bd92ce568ebb1dfa50abeac956b0972d5173
 
 #Create visualizations
 def articles_per_movie_chart(cur):
@@ -191,7 +247,7 @@ def main():
     fetching articles, analyzing data, and creating visualizations.
     """
     db_name = "movies.db"
-    cur,conn = setup_articles_table(db_name)
+    conn,cur = setup_articles_table(db_name)
     fetch_articles(cur, conn, fetch_limit=25)
     
     #Analyze and visualize data
