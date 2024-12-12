@@ -6,7 +6,7 @@ import json
 import os
 
 # Constants
-API_KEY = "b68f1a38b495424992a3176ea0263f11"
+API_KEY = "3b294c319fcb4f6481adf6fddd6918d6"
 BASE_URL = "https://newsapi.org/v2/everything"
 
 
@@ -32,18 +32,20 @@ def setup_articles_table(db_name):
                 source_name TEXT,
                 published_date TEXT,
                 article_content TEXT,
+                movie_id INTEGER,
                 UNIQUE(movie_title, article_title, published_date)
+                FOREIGN KEY (movie_id) REFERENCES Movies(id)
             )
         """
         )
         conn.commit()
     except sqlite3.Error as e:
         print(f"Error setting up Articles table: {e}")
-    return conn,cur
+    return cur, conn
 
 
 # Fetch and store articles from NewsAPI
-def fetch_articles(cur, conn, fetch_limit=25):
+def fetch_articles(cur,conn, fetch_limit=25):
 
     """
     Fetches articles related to a specific movie title from NewsAPI and stores them in the database.
@@ -127,7 +129,7 @@ def fetch_articles(cur, conn, fetch_limit=25):
                 break
 
 #Analyze article counts per movie
-def analyze_article_counts(con, cur):
+def analyze_article_counts(cur,conn):
     """
     Analyzes the number of articles for each movie.
 
@@ -148,7 +150,7 @@ def analyze_article_counts(con, cur):
     
 
 #Perform database join and analysis
-def analyze_joined_data(con,cur):
+def analyze_joined_data(cur,conn):
     """
     Joins the Movies and Articles tables to analyze data.
     Returns:
@@ -160,7 +162,7 @@ def analyze_joined_data(con,cur):
             SELECT Movies.title, Movies.imdb_rating, COUNT(Articles.id) as article_count
             FROM Movies 
             JOIN Articles  ON Movies.title = Articles.movie_title
-            GROUP BY Movie.title
+            GROUP BY Movies.title
             ORDER BY article_count DESC;
         """)
         results = cur.fetchall()
@@ -216,7 +218,7 @@ def main():
     fetching articles, analyzing data, and creating visualizations.
     """
     db_name = "movies.db"
-    conn,cur = setup_articles_table(db_name)
+    cur,conn = setup_articles_table(db_name)
     fetch_articles(cur, conn, fetch_limit=25)
     #Analyze and visualize data
     article_counts = analyze_article_counts(cur, conn)
