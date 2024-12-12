@@ -1,18 +1,33 @@
 Average IMDb Rating by Genre
 Genre,Average Rating
 "Documentary, Biography, History",9.5
+"Documentary, Biography, Comedy",9.1
 Action,9.0
+"Documentary, Music",8.6
+"Animation, Short, Comedy",8.4
 N/A,8.3
-Documentary,6.449999999999999
-"Animation, Action, Adventure",6.25
+"Short, Comedy",8.1
+"Short, Adventure, Comedy",6.7
+"Animation, Action, Adventure",6.633333333333333
+"Animation, Action, Sci-Fi",6.6
+"Animation, Short, Adventure",6.5
+Documentary,5.9799999999999995
+"Animation, Adventure, Comedy",5.833333333333333
+Reality-TV,5.8
+"Action, Comedy, Horror",5.8
+Comedy,5.7
 "Comedy, Horror",5.5
-"Animation, Adventure, Comedy",5.5
-Comedy,4.575
+"Comedy, Music",4.1
+Horror,3.6
+"Adventure, Comedy, Fantasy",3.3
+"Comedy, Sci-Fi, Thriller",3.2
+Family,3.1
 "Animation, Action, Comedy",2.2
 
 Movie Counts by Year
 Year,Count
-2024,105
+2024,50
+2015,25
 
 Movies with Soundtracks
 Title,Year,Album Name,Genre
@@ -30,44 +45,35 @@ Another Cabin in the Woods Movie,2024,Cabin in the Woods,"Comedy, Horror"
 The Wrong Movie,2024,The Theme from The Wrong Movie,Drama
 Cheech and Chong's Last Movie,2024,Cheech And Chong,Documentary
 Every Christopher Nolan Movie Ranked,2024,Nolan,News
-These Guys the Movie,2024,MOVIE,Comedy
-Evil Tyson J33: The Movie,2024,Evil,Comedy
+These Guys the Movie,2024,Guy,Comedy
 LOL Surprise! The Skate Dance Movie,2024,The Skate Dance Movie,Comedy
 Five Nights at Freddy's Minecraft Roleplay Movie,2024,Five Nights at Freddy's,"Action, Comedy, Horror"
-Eternity Road Movie,2024,ETERNITY,Drama
+Eternity Road Movie,2024,Eternity,Drama
 "Summerville, the movie",2024,Summerville,"Short, Sci-Fi"
 Community: The Movie,2024,Community,Comedy
 Fat Chance! the Movie,2024,Fat Chance,"Animation, Adventure"
 Christie the Movie,2024,Christie,"Action, Crime, Drama"
-Home Movie,2024,Home Movie,Short
-The Movie More,2024,More,Comedy
-"Macho Madness, the Movie",2024,Macho,Short
-Super Bowl LVIII was a Movie,2024,Super Bowl,Adventure
-Movie Night,2024,The Movie Night Album,Horror
-Cacophony the Animated Movie,2024,Cacophony,"Animation, Action, Adventure"
-A Trill Movie Look Vol. 1,2024,Trill,"Short, Music"
-Double Standards Featured Movie,2024,double standard,Drama
-This is a Movie,2024,This Is A Movie (Music from the Motion Picture The Upsetter) - Single,"Documentary, Short"
-WZZQ the Movie,2024,Movie,Documentary
-Payback: Movie 2024,2024,PayBack,Sci-Fi
-One Day the Movie,2024,One Day,Adventure
-Paranoia Tapes : The Movie,2024,paranoia,Horror
-The Movie,2024,The Movie (La Verdadera Pelicula - Bachata Is Taking Over),"Animation, Short"
-Most Wanted: The Movie,2024,Most Wanted,"Animation, Short, Crime"
-A Truly Awful Superhero Movie,2024,Superhero,"Short, Comedy"
-Movie Star,2024,Movie Star,"Short, Drama"
-The Watchers Roblox movie,2024,The Watchers,"Fantasy, Horror"
-Midnight Jack the Movie,2024,MIDNIGHT,"Documentary, Comedy, Music"
-Escape (The Piña Colada Movie),2024,Escape,"Short, Comedy"
-Slide or Die the Movie,2024,Slide,Action
-Cash on Delivery - The Movie,2024,Cash On Delivery,Comedy
 
 Average Song Length by Album
 Album Name,Average Length
-Cacophony,00:03:44
 Abducted,00:03:37
-Christie,00:02:57
-Cheech And Chong,00:02:52
-Cabin in the Woods,00:02:02
 Big City Greens the Movie: Spacecation (Original Soundtrack),00:01:54
-Community,00:01:40
+
+"Movies, IMDB Rating, and Article Count"
+Movie Title,IMDb Rating,Article Count
+Not Another Church Movie,2.2,99
+The Garfield Movie,5.7,98
+Community: The Movie,0.0,25
+King of the Movie Studio,0.0,25
+The Wrong Movie,0.0,25
+These Guys the Movie,0.0,25
+Slave Play. Not a Movie. A Play.,5.3,24
+Patrice: The Movie,9.5,22
+The 4:30 Movie,6.0,16
+The Day the Earth Blew Up: A Looney Tunes Movie,7.0,12
+Movie Monster Support Group,0.0,7
+No Time to Spy: A Loud House Movie,6.3,6
+The Casagrandes Movie,5.6,3
+Ryan's World the Movie: Titan Universe Adventure,2.2,2
+Saving Bikini Bottom: The Sandy Cheeks Movie,3.7,2
+The Real Bros of Simi Valley: The Movie,7.1,1

@@ -108,6 +108,9 @@ def fetch_soundtrack_data(cur, conn, token):
 
             # Insert soundtrack into the 'soundtracks' table
             for album in albums:
+                if movie_total == max_inserts:
+                    print(f"Reached the limit of {max_inserts} rows for this execution. Stopping fetch operation.")
+                    break
                 soundtrack_name = album["name"]
 
                 if movie_title.lower() not in soundtrack_name.lower() and soundtrack_name.lower() not in movie_title.lower() :
