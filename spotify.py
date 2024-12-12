@@ -8,11 +8,6 @@ from json.decoder import JSONDecodeError
 import requests
 import json
 import os
-<<<<<<< HEAD
-import re
-
-
-=======
 """
 Things to complete: 
 [X] search for only 25 albums at a time
@@ -21,7 +16,6 @@ Things to complete:
 [] if not create visual for top 5  movies with the longest album length and/or longest average song length
 [] DONE!
 """
->>>>>>> e8e4dc73873f2997ad01a689682a198546256dc9
 #Step 1: Set up connection to Spotipy
 def get_token():
    CLIENT_ID = "cdc220444d2a42f5a7c4472fbe862667"
@@ -52,17 +46,6 @@ def create_soundtrack_table(db_name):
    path = os.path.dirname(os.path.abspath(__file__))
    conn = sqlite3.connect(os.path.join(path, db_name))
    cur = conn.cursor()
-<<<<<<< HEAD
-   cur.execute("DROP TABLE IF EXISTS Soundtracks")
-   cur.execute("""CREATE TABLE IF NOT EXISTS Soundtracks ( 
-               id INTEGER PRIMARY KEY,
-               movie_title TEXT, 
-               artists TEXT, 
-               album_name TEXT, 
-               genre TEXT
-               )
-                """)
-=======
    cur.execute("""CREATE TABLE IF NOT EXISTS soundtracks ( 
                id INTEGER PRIMARY KEY AUTOINCREMENT,
                movie_title TEXT UNIQUE, 
@@ -81,32 +64,11 @@ def create_soundtrack_table(db_name):
                song_length TEXT,
                FOREIGN KEY (soundtrack_id) REFERENCES soundtracks(id))
                """)
->>>>>>> e8e4dc73873f2997ad01a689682a198546256dc9
    conn.commit()
    return cur, conn
 
 
 #Step 3: Request movie soundtrack data from Spotipy and store in soundtrack table
-<<<<<<< HEAD
-def fetch_spotify_data(cur, conn, token, title):
-   sp = spotipy.Spotify(auth=token)
-   try:
-         results = sp.search(q=title, type="album", limit=1)
-         album = results["albums"]["items"][0]
-         album_name = album["name"]
-         artists = ", ".join(artist["name"] for artist in album["artists"])
-         genre = "Soundtrack"
-         cur.execute("""
-            INSERT OR IGNORE INTO Soundtracks (movie_title, artists, album_name, genre)
-            VALUES (?, ?, ?, ?)
-            """, (title, artists, album_name, genre))
-   except Exception as e:
-         print(f"Error fetching data for {title}: {e}")
-
-   conn.commit()
-
-
-=======
 def fetch_soundtrack_data(cur, conn, token):
     
     """
@@ -261,7 +223,6 @@ def fetch_soundtrack_songs_data(cur, conn, token):
 def main():
     db_name = "movies.db"
     token = get_token()
->>>>>>> e8e4dc73873f2997ad01a689682a198546256dc9
 
 #Step 4: Run a query on Soundtracks table
 def soundtrack_query(cur):
