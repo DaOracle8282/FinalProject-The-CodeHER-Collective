@@ -41,6 +41,7 @@ def movie_exists(cur, title):
     cur.execute("SELECT 1 FROM Movies WHERE title = ?", (title,))
     return cur.fetchone() is not None
 
+
 def fetch_movies_2024(cur, conn, fetch_limit=25):
     """
     Fetches up to `fetch_limit` movies from the year 2024 using the OMDB API and stores them in the database.

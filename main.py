@@ -1,6 +1,6 @@
 from omdb import set_up_database, fetch_movies_2024
 from query_omdb import query_shared_movies_and_soundtracks, calculate_average_rating, genre_count
-from spotify import fetch_spotify_data, get_token
+from spotify import fetch__data, get_token
 
 def main():
     # Step 1: Set up the database
