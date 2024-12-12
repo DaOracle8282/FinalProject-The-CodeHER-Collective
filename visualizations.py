@@ -43,13 +43,14 @@ def genre_horizontal_bar_chart(cur):
     genres = [row[0] for row in data]
     counts = [row[1] for row in data]
 
-    plt.figure(figsize=(10, 8))
-    plt.barh(genres, counts, color='black')  # Add color
-    plt.title("Number of Movies By Genre", fontweight="bold")
-    plt.xlabel("Number of Movies", fontweight="bold")
-    plt.ylabel("Genres", fontweight="bold")
-    plt.gca().invert_yaxis()  # Invert to show highest count on top
-    plt.tight_layout()
+    fig, ax = plt.subplots(figsize=(10, 8))
+    ax.barh(genres, counts, color='black')  # Add color
+    ax.set_title("Number of Movies By Genre", fontweight="bold")
+    ax.set_xlabel("Number of Movies", fontweight="bold")
+    ax.set_ylabel("Genres", fontweight="bold")
+    ax.invert_yaxis()
+    fig.tight_layout()
+    fig.savefig("movies_by_genre.png")
     plt.show()
 
 
