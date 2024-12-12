@@ -128,7 +128,7 @@ def fetch_and_store_articles():
         print(f"Fetching articles for movies: {movies}")
 
         for movie_title in movies:
-            fetch_articles(cur, conn, movie_title, page_limit=1)
+            fetch_articles(cur, conn, movie_title, page_limit=5)
 
     except sqlite3.Error as e:
         print(f"Error fetching and storing articles: {e}")
