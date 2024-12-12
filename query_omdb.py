@@ -32,12 +32,12 @@ def count_movies_by_year(cur):
 def join_movies_and_soundtracks(cur):
     """
     Joins the Movies and Soundtracks tables on the title.
-    Returns a list of tuples: (title, year, album_name, genre).
+    Returns a list of tuples: (title, year, soundtrack_name, genre).
     """
     cur.execute("""
-        SELECT Movies.title, Movies.year, Soundtracks.album_name, Movies.genre
+        SELECT Movies.title, Movies.year, soundtracks.soundtrack_name, Movies.genre
         FROM Movies
-        JOIN Soundtracks ON Movies.title = Soundtracks.album_name
+        JOIN Soundtracks ON Movies.id = soundtracks.movie_id
         ORDER BY Movies.year DESC
     """)
     return cur.fetchall()
@@ -55,7 +55,7 @@ def write_to_csv(filename, data):
         writer.writerow(["Average IMDb Rating by Genre"])
         writer.writerow(["Genre", "Average Rating"])
         for genre, rating in data["average_ratings_by_genre"]:
-            writer.writerow([genre, f"{rating:.2f}"])
+            writer.writerow([genre, rating ])
         
         writer.writerow([])  # Empty line
         writer.writerow(["Movie Counts by Year"])
