@@ -1,12 +1,11 @@
 import sqlite3
 import requests
-import csv
 import matplotlib.pyplot as plt
 import json
 import os
 
 # Constants
-API_KEY = "3b294c319fcb4f6481adf6fddd6918d6"
+API_KEY = "da38bc1769ff4702a467994222783ec5"
 BASE_URL = "https://newsapi.org/v2/everything"
 
 
@@ -171,7 +170,7 @@ def analyze_joined_data(con,cur):
 
 
 #Create visualizations
-def create_visualizations(article_counts, joined_data):
+def articles_per_movie_chart(cur):
     """
     Creates visualizations for article counts and joined data.
     
@@ -179,6 +178,13 @@ def create_visualizations(article_counts, joined_data):
     - article_counts (lists of tuples): Article counts per movie.
     - joined_data (list of tuples): Joined data including IMDb ratings and article counts.
     """
+    cur.execute("""
+            SELECT movie_title, COUNT(*) as article_count
+            FROM Articles
+            GROUP BY movie_title
+            ORDER BY article_count DESC;
+        """)
+    article_counts = cur.fetchall()
     # Bar chart: Articles per movie
     movie_titles = [row[0] for row in article_counts]
     counts = [row[1] for row in article_counts]
@@ -194,6 +200,16 @@ def create_visualizations(article_counts, joined_data):
     plt.savefig("articles_per_movie.png")
     plt.show()
 
+
+def imdb_ratings_and_articles(cur):
+    cur.execute("""
+            SELECT Movies.title, Movies.imdb_rating, COUNT(Articles.id) as article_count
+            FROM Movies 
+            JOIN Articles  ON Movies.title = Articles.movie_title
+            GROUP BY Movies.title
+            ORDER BY article_count DESC;
+        """)
+    joined_data = cur.fetchall()
     # Scatter plot: IMDb rating vs. article count
     movie_titles = [row[0] for row in joined_data]
     imdb_ratings = [row[1] for row in joined_data]
@@ -218,11 +234,10 @@ def main():
     db_name = "movies.db"
     conn,cur = setup_articles_table(db_name)
     fetch_articles(cur, conn, fetch_limit=25)
+    
     #Analyze and visualize data
-    article_counts = analyze_article_counts(cur, conn)
-    joined_data = analyze_joined_data(cur,conn)
-
-    create_visualizations(article_counts, joined_data)
+    articles_per_movie_chart(cur)
+    imdb_ratings_and_articles(cur)
     conn.close()
 
 if __name__ == "__main__":
