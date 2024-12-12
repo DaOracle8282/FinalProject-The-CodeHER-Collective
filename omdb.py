@@ -41,32 +41,24 @@ def movie_exists(cur, title):
     cur.execute("SELECT 1 FROM Movies WHERE title = ?", (title,))
     return cur.fetchone() is not None
 
-def fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25):
+def fetch_movies_2024(cur, conn, fetch_limit=25):
     """
-    Fetches movies from the year 2024 using the OMDB API and stores them in the database.
-    
+    Fetches up to `fetch_limit` movies from the year 2024 using the OMDB API and stores them in the database.
+
     Arguments:
     cur (sqlite3.Cursor): The database cursor.
     conn (sqlite3.Connection): The database connection.
-    max_total (int): The maximum total number of movies to store in the database.
     fetch_limit (int): The maximum number of movies to fetch in a single run.
     """
     base_url = "http://www.omdbapi.com/"
     api_key = "25781136"  # Replace with your API key
     year = 2024
-
-    cur.execute("SELECT COUNT(*) FROM Movies")
-    current_count = cur.fetchone()[0]
-    print(f"Current count of movies: {current_count}")
-
-    if current_count >= max_total:
-        print(f"Database already contains {current_count} movies. Limit of {max_total} reached.")
-        return
-
-    remaining = min(max_total - current_count, fetch_limit)
+    current_count = 0
     page = 1
 
-    while remaining > 0:
+    print(f"Starting fetch for up to {fetch_limit} movies from the year {year}.")
+
+    while current_count < fetch_limit:
         response = requests.get(base_url, params={
             "s": "movie",
             "type": "movie",
@@ -82,9 +74,13 @@ def fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25):
         data = response.json()
         if data.get("Response") != "True":
             print(f"No more movies found for year {year}, page {page}.")
-            break
+            return
 
         for movie in data.get("Search", []):
+            if current_count >= fetch_limit:
+                break
+
+            # Fetch full movie details
             full_data = requests.get(base_url, params={
                 "i": movie.get("imdbID"),
                 "apikey": api_key
@@ -107,19 +103,15 @@ def fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25):
                     print(f"Skipping duplicate movie: {title}")
                     continue
 
+                # Insert movie into database
                 try:
                     cur.execute("""
                         INSERT INTO Movies (title, year, genre, country, imdb_rating)
                         VALUES (?, ?, ?, ?, ?)
                     """, (title, int(year), genre, country, float(imdb_rating)))
                     conn.commit()
-
-                    if cur.rowcount > 0:
-                        remaining -= 1
-                        print(f"Inserted: {title} ({year})")
-
-                    if remaining <= 0:
-                        break
+                    current_count += 1
+                    print(f"Inserted movie: {title}")
                 except Exception as e:
                     print(f"Error inserting movie: {title}. Error: {e}")
 
@@ -127,7 +119,11 @@ def fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25):
 
     cur.execute("SELECT COUNT(*) FROM Movies")
     final_count = cur.fetchone()[0]
-    print(f"Fetch process completed. Current movie count: {final_count}")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(f"TOTAL MOVIES INSERTED INTO MOVIES TABLE DURING THIS EXECUTION: {current_count}")
+    print(f"Fetch process completed. Total movie count: {final_count}")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
 
 def main():
     """
@@ -135,7 +131,7 @@ def main():
     """
     db_name = "movies.db"
     cur, conn = set_up_database(db_name)
-    fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25)
+    fetch_movies_2024(cur, conn, fetch_limit=25)
     conn.close()
 
 if __name__ == "__main__":

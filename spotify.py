@@ -1,33 +1,27 @@
 import sqlite3
 import spotipy
-from spotipy.oauth2 import SpotifyOAuth
-import sys
-import spotipy.util as util
-import webbrowser
-from json.decoder import JSONDecodeError
-import requests
-import json
+import spotipy.oauth2 as oauth2
 import os
-"""
-Things to complete: 
-[X] search for only 25 albums at a time
-[X] add only 25 songs at a time
-[] filter for genre if possible and create visual for top 5 most popular movie soundtrack genres
-[] if not create visual for top 5  movies with the longest album length and/or longest average song length
-[] DONE!
-"""
+
 #Step 1: Set up connection to Spotipy
 def get_token():
+   """
+    Sets up the connection to the Spotipy API.
+
+    Parameters:
+    - None.
+
+    Returns:
+    - token_info: token granted to access Spotify API.
+    """
+   
    CLIENT_ID = "cdc220444d2a42f5a7c4472fbe862667"
    CLIENT_SECRET = "7f72898d496246ea978f8886753a3557"
-   REDIRECT_URI = "https://www.google.com/?code=AQBvXoNUMhosHVyEwejSFYk1sI6kyUR0bbJIT0N1XCtSrF5nKqOQxf7yf07ZI4-QTMTT82ri_RIUfiGt9pynrx-dBGj7lHgnhJoe6WduFFzSKPF_ehjXrHHvUy4pKcd_IpnyJkEpEZ6agYHtw6yxap6rghCTaP0QUIFhjogQvH4R8y1dcrVUNAM"
 
-   sp_oauth = SpotifyOAuth(client_id=CLIENT_ID,
-                            client_secret=CLIENT_SECRET,
-                            redirect_uri=REDIRECT_URI,
-                            scope="user-library-read")
-   token_info = sp_oauth.get_cached_token()
-   return token_info['access_token']
+   sp_oauth = oauth2.SpotifyClientCredentials(client_id=CLIENT_ID,
+                                               client_secret=CLIENT_SECRET)
+   token_info = sp_oauth.get_access_token(as_dict=False)
+   return token_info
 
 
 #Step 2: Create soundtrack table in existing Movies database
@@ -219,35 +213,20 @@ def fetch_soundtrack_songs_data(cur, conn, token):
                     print(f"Error inserting song: {song_title}. Error: {e}")
         except Exception as e:
             print(f"Error fetching songs for soundtrack: {soundtrack_name}. Error: {e}")
-#Step 5: Define main function
+
+#Step 4: Define main function
 def main():
-    db_name = "movies.db"
-    token = get_token()
-
-#Step 4: Run a query on Soundtracks table
-def soundtrack_query(cur):
-    cur.execute("""
-        SELECT movie_title, artists, album_name, genre
-        FROM Soundtracks
-        ORDER BY movie_title ASC
-    """)
-    results = cur.fetchall()
-    for row in results:
-        print(row)
-
-
-#Step 5: Define main function
-def main():
+   db_name = "movies.db"
    token = get_token()
    cur, conn = create_soundtrack_table("movies.db")
-    # Example movie titles
-   movie_titles = ["Inception", "Avatar", "Interstellar", "The Dark Knight"]
-   for title in movie_titles:
-      fetch_spotify_data(cur, conn, token, title)
-
-   soundtrack_query(cur)
+   fetch_soundtrack_songs_data(cur, conn, token)
+   fetch_soundtrack_songs_data(cur, conn, token)
    conn.close()
 
-# Step 6: Run the main function
+
+# Step 5: Run the main function
+if __name__ == "__main__":
+  main()
+# Step 5: Run the main function
 if __name__ == "__main__":
    main()
