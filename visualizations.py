@@ -86,7 +86,59 @@ def longest_movie_soundtracks_chart(cur):
     plt.show()
     
 
+def articles_per_movie_chart(cur):
+    """
+    Creates visualizations for article counts and joined data.
+    
+    Parameters:
+    - article_counts (lists of tuples): Article counts per movie.
+    - joined_data (list of tuples): Joined data including IMDb ratings and article counts.
+    """
+    cur.execute("""
+            SELECT movie_title, COUNT(*) as article_count
+            FROM Articles
+            GROUP BY movie_title
+            ORDER BY article_count DESC;
+        """)
+    article_counts = cur.fetchall()
+    # Bar chart: Articles per movie
+    movie_titles = [row[0] for row in article_counts]
+    counts = [row[1] for row in article_counts]
 
+    plt.figure(figsize=(10, 6))
+    plt.bar(movie_titles, counts, color="skyblue", label="Article Count")
+    plt.title("Number of Articles per Movie\n(Data fetched dynamically)")
+    plt.xlabel("Movie Title")
+    plt.ylabel("Article Count")
+    plt.xticks(rotation=45, ha="right")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("articles_per_movie.png")
+    plt.show()
+
+def imdb_ratings_and_articles(cur):
+    cur.execute("""
+            SELECT Movies.title, Movies.imdb_rating, COUNT(Articles.id) as article_count
+            FROM Movies 
+            JOIN Articles  ON Movies.title = Articles.movie_title
+            GROUP BY Movies.title
+            ORDER BY article_count DESC;
+        """)
+    joined_data = cur.fetchall()
+    # Scatter plot: IMDb rating vs. article count
+    movie_titles = [row[0] for row in joined_data]
+    imdb_ratings = [row[1] for row in joined_data]
+    article_counts = [row[2] for row in joined_data]
+
+    plt.figure(figsize=(10, 6))
+    plt.scatter(imdb_ratings, article_counts, color="green", alpha=0.7, label="Movies")
+    plt.title("IMDb Rating vs. Article Count")
+    plt.xlabel("IMDb Rating")
+    plt.ylabel("Article Count")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("imdb_vs_articles.png")
+    plt.show()
 
 def main():
     """
@@ -99,7 +151,8 @@ def main():
     genre_bar_chart(cur)
     genre_horizontal_bar_chart(cur)
     longest_movie_soundtracks_chart(cur)
-
+    articles_per_movie_chart(cur)
+    imdb_ratings_and_articles(cur)
     conn.close()
 
 
