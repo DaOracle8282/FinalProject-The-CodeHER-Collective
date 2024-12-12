@@ -21,11 +21,7 @@ def setup_articles_table(db_name):
     """
     path = os.path.dirname(os.path.abspath(__file__))
     conn = sqlite3.connect(os.path.join(path, db_name))
-<<<<<<< HEAD
     cur = conn.cursor
-=======
-    cur = conn.cursor()
->>>>>>> 9eefe8a7f3d4ef9951ecd2dce72bb3ba39625fa5
     try:
         cursor = conn.cursor()
         cur.execute("""
@@ -38,29 +34,17 @@ def setup_articles_table(db_name):
                 article_content TEXT,
                 movie_id INTEGER,
                 UNIQUE(movie_title, article_title, published_date)
-<<<<<<< HEAD
-=======
-                FOREIGN KEY (movie_id) REFERENCES Movies(id)
->>>>>>> 9eefe8a7f3d4ef9951ecd2dce72bb3ba39625fa5
             )
         """
         )
         conn.commit()
     except sqlite3.Error as e:
         print(f"Error setting up Articles table: {e}")
-<<<<<<< HEAD
     return conn, cur
 
 
 # Fetch and store articles from NewsAPI
 def fetch_articles(cur, conn, fetch_limit=25):
-=======
-    return cur, conn
-
-
-# Fetch and store articles from NewsAPI
-def fetch_articles(cur,conn, fetch_limit=25):
->>>>>>> 9eefe8a7f3d4ef9951ecd2dce72bb3ba39625fa5
 
     """
     Fetches articles related to a specific movie title from NewsAPI and stores them in the database.
@@ -81,18 +65,12 @@ def fetch_articles(cur,conn, fetch_limit=25):
         'User-Agent': 'NewsAPI-Client/1.0',  # Add a user-agent for identification
         'Accept': 'application/json'         # Specify that the response should be JSON
     }
-<<<<<<< HEAD
     cur.execute("""SELECT id, title
                 FROM Movies
-=======
-    cur.execute("""SELECT id, title 
-                FROM Movies 
->>>>>>> 9eefe8a7f3d4ef9951ecd2dce72bb3ba39625fa5
                 WHERE year = 2024
                 AND Movies.title NOT IN (SELECT Articles.movie_title FROM Articles)""")
     movies = cur.fetchall()
     if not movies:
-<<<<<<< HEAD
             print("No movies from 2024 found in the database.")
             return
     
@@ -108,12 +86,13 @@ def fetch_articles(cur,conn, fetch_limit=25):
                 'page': page
             }
 
-            try:
-                response = requests.get(BASE_URL, params=params, headers=headers)
-                if response.status_code != 200:
-                    print(f"Error fetching articles for '{movie_title}':
-            {response.status_code}")
+                try:
+                    response = requests.get(BASE_URL, params=params, headers=headers)
+                    if response.status_code != 200:
+                        print(f"Error fetching articles for '{movie_title}':
+{response.status_code}")
                     break
+                
             articles = response.json().get("articles", [])
             if not articles:
                 print(f"No more articles found for '{movie_title}'.")
@@ -133,66 +112,16 @@ def fetch_articles(cur,conn, fetch_limit=25):
                    
                 if cur.fetchone()[0] > 0:
                     continue
-=======
-        print("No movies from 2024 found in the database.")
-        return
-
-    print("Fetching soundtracks for movies from 2024...")
-
-    for id, movie_title in movies:
-        
-        while total_articles < fetch_limit:
-            print(f"Fetching articles for '{movie_title}', Page: {page}")
-            params = {
-            'q': movie_title,
-            'apiKey': API_KEY,
-            'pageSize': PAGE_SIZE,
-            'page': page
-        }
-
-            try: 
-                response = requests.get(BASE_URL, params=params, headers=headers)
-                if response.status_code != 200:
-                    print(f"Error fetching articles for '{movie_title}': {response.status_code}")
-                    break
-
-                articles = response.json().get("articles", [])
-                if not articles:
-                    print(f"No more articles found for '{movie_title}'.")
-                    break
-
-                for article in articles:
-                    article_title = article.get("title", "").strip()
-                    source_name = article.get("source", {}).get("name", "").strip()
-                    published_date = article.get("publishedAt", "").strip()
-                    article_content = article.get("content", "").strip()
-
-                    cur.execute("""
-                    SELECT COUNT(*) FROM Articles
-                    WHERE movie_title = ? AND article_title = ? AND published_date = ?;
-                """, (movie_title, article_title, published_date))
-                    if cur.fetchone()[0] > 0:
-                        continue
->>>>>>> 9eefe8a7f3d4ef9951ecd2dce72bb3ba39625fa5
 
                     try:
                         cur.execute("""
                         INSERT OR IGNORE INTO Articles (movie_title, article_title, source_name, published_date, article_content)
                         VALUES (?, ?, ?, ?, ?)
-<<<<<<< HEAD
                     """, (movie_title, article_title, source_name, published_date, article_content)
                     total_articles += 1
                     print(f"Inserted: {article_title}")
                 except sqlite3.Error as e:
                     print(f"Error inserting article: {e}")
-=======
-                        """, (movie_title, article_title, source_name, published_date, article_content))
-                        total_articles += 1
-                        print(f"Inserted: {article_title}")
-                        conn.commit()
-                    except sqlite3.Error as e:
-                        print(f"Error inserting article: {e}")
->>>>>>> 9eefe8a7f3d4ef9951ecd2dce72bb3ba39625fa5
 
                 page += 1
             except requests.exceptions.RequestException as e:
