@@ -133,7 +133,7 @@ def main():
     """
     The main function that orchestrates the database setup and movie fetching process.
     """
-    db_name = "moviestester1.db"
+    db_name = "movies.db"
     cur, conn = set_up_database(db_name)
     fetch_movies_2024(cur, conn, max_total=100, fetch_limit=25)
     conn.close()
