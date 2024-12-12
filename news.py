@@ -21,18 +21,17 @@ def setup_articles_table(db_name):
     """
     path = os.path.dirname(os.path.abspath(__file__))
     conn = sqlite3.connect(os.path.join(path, db_name))
-    cur = conn.cursor
+    cur = conn.cursor()
     try:
         cursor = conn.cursor()
         cur.execute("""
             CREATE TABLE IF NOT EXISTS Articles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 movie_title TEXT,
-                    
-                
+                article_title TEXT,
+                source_name TEXT,
                 published_date TEXT,
                 article_content TEXT,
-                movie_id INTEGER,
                 UNIQUE(movie_title, article_title, published_date)
             )
         """
@@ -40,7 +39,7 @@ def setup_articles_table(db_name):
         conn.commit()
     except sqlite3.Error as e:
         print(f"Error setting up Articles table: {e}")
-    return conn, cur
+    return conn,cur
 
 
 # Fetch and store articles from NewsAPI
@@ -65,63 +64,62 @@ def fetch_articles(cur, conn, fetch_limit=25):
         'User-Agent': 'NewsAPI-Client/1.0',  # Add a user-agent for identification
         'Accept': 'application/json'         # Specify that the response should be JSON
     }
-    cur.execute("""SELECT id, title
-                FROM Movies
+    cur.execute("""SELECT id, title 
+                FROM Movies 
                 WHERE year = 2024
                 AND Movies.title NOT IN (SELECT Articles.movie_title FROM Articles)""")
     movies = cur.fetchall()
     if not movies:
-            print("No movies from 2024 found in the database.")
-            return
-    
+        print("No movies from 2024 found in the database.")
+        return
+
     print("Fetching soundtracks for movies from 2024...")
 
     for id, movie_title in movies:
-            while total_articles < fetch_limit:
-                print(f"Fetching articles for '{movie_title}', Page: {page}")
-                params = {
-                'q': movie_title,
-                'apiKey': API_KEY,
-                'pageSize': PAGE_SIZE,
-                'page': page
-            }
+        
+        while total_articles < fetch_limit:
+            print(f"Fetching articles for '{movie_title}', Page: {page}")
+            params = {
+            'q': movie_title,
+            'apiKey': API_KEY,
+            'pageSize': PAGE_SIZE,
+            'page': page
+        }
 
-                try:
-                    response = requests.get(BASE_URL, params=params, headers=headers)
-                    if response.status_code != 200:
-                        print(f"Error fetching articles for '{movie_title}':
-{response.status_code}")
+            try: 
+                response = requests.get(BASE_URL, params=params, headers=headers)
+                if response.status_code != 200:
+                    print(f"Error fetching articles for '{movie_title}': {response.status_code}")
                     break
-                
-            articles = response.json().get("articles", [])
-            if not articles:
-                print(f"No more articles found for '{movie_title}'.")
-                break
 
-            
-            for article in articles:
-                article_title = article.get("title", "").strip()
-                source_name = article.get("source", {}).get("name", "").strip()
-                published_date = article.get("publishedAt", "").strip()
-                article_content = article.get("content", "").strip()
+                articles = response.json().get("articles", [])
+                if not articles:
+                    print(f"No more articles found for '{movie_title}'.")
+                    break
 
-                cur.execute("""
-                SELECT COUNT(*) FROM Articles
-                WHERE movie_title = ? AND article_title = ? AND published_date = ?;
-            """, (movie_title, article_title, published_date))
-                   
-                if cur.fetchone()[0] > 0:
-                    continue
+                for article in articles:
+                    article_title = article.get("title", "").strip()
+                    source_name = article.get("source", {}).get("name", "").strip()
+                    published_date = article.get("publishedAt", "").strip()
+                    article_content = article.get("content", "").strip()
+
+                    cur.execute("""
+                    SELECT COUNT(*) FROM Articles
+                    WHERE movie_title = ? AND article_title = ? AND published_date = ?;
+                """, (movie_title, article_title, published_date))
+                    if cur.fetchone()[0] > 0:
+                        continue
 
                     try:
                         cur.execute("""
                         INSERT OR IGNORE INTO Articles (movie_title, article_title, source_name, published_date, article_content)
                         VALUES (?, ?, ?, ?, ?)
-                    """, (movie_title, article_title, source_name, published_date, article_content)
-                    total_articles += 1
-                    print(f"Inserted: {article_title}")
-                except sqlite3.Error as e:
-                    print(f"Error inserting article: {e}")
+                        """, (movie_title, article_title, source_name, published_date, article_content))
+                        total_articles += 1
+                        print(f"Inserted: {article_title}")
+                        conn.commit()
+                    except sqlite3.Error as e:
+                        print(f"Error inserting article: {e}")
 
                 page += 1
             except requests.exceptions.RequestException as e:
@@ -129,7 +127,7 @@ def fetch_articles(cur, conn, fetch_limit=25):
                 break
 
 #Analyze article counts per movie
-def analyze_article_counts(cur,conn):
+def analyze_article_counts(con, cur):
     """
     Analyzes the number of articles for each movie.
 
@@ -150,7 +148,7 @@ def analyze_article_counts(cur,conn):
     
 
 #Perform database join and analysis
-def analyze_joined_data(cur,conn):
+def analyze_joined_data(con,cur):
     """
     Joins the Movies and Articles tables to analyze data.
     Returns:
@@ -162,7 +160,7 @@ def analyze_joined_data(cur,conn):
             SELECT Movies.title, Movies.imdb_rating, COUNT(Articles.id) as article_count
             FROM Movies 
             JOIN Articles  ON Movies.title = Articles.movie_title
-            GROUP BY Movies.title
+            GROUP BY Movie.title
             ORDER BY article_count DESC;
         """)
         results = cur.fetchall()
@@ -218,7 +216,7 @@ def main():
     fetching articles, analyzing data, and creating visualizations.
     """
     db_name = "movies.db"
-    cur,conn = setup_articles_table(db_name)
+    conn,cur = setup_articles_table(db_name)
     fetch_articles(cur, conn, fetch_limit=25)
     #Analyze and visualize data
     article_counts = analyze_article_counts(cur, conn)
