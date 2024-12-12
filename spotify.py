@@ -1,33 +1,34 @@
 import sqlite3
 import spotipy
-import spotipy.oauth2 as oauth2
+from spotipy.oauth2 import SpotifyOAuth
+import sys
+import spotipy.util as util
+import webbrowser
+from json.decoder import JSONDecodeError
+import requests
+import json
 import os
+import re
+
 
 #Step 1: Set up connection to Spotipy
 def get_token():
-    """
-    Sets up the connection to the Spotipy API.
+   CLIENT_ID = "cdc220444d2a42f5a7c4472fbe862667"
+   CLIENT_SECRET = "7f72898d496246ea978f8886753a3557"
+   REDIRECT_URI = "https://www.google.com/?code=AQBvXoNUMhosHVyEwejSFYk1sI6kyUR0bbJIT0N1XCtSrF5nKqOQxf7yf07ZI4-QTMTT82ri_RIUfiGt9pynrx-dBGj7lHgnhJoe6WduFFzSKPF_ehjXrHHvUy4pKcd_IpnyJkEpEZ6agYHtw6yxap6rghCTaP0QUIFhjogQvH4R8y1dcrVUNAM"
 
-    Parameters:
-    - None.
-
-    Returns:
-    - token_info: token granted to access Spotify API.
-    """
-    CLIENT_ID = "cdc220444d2a42f5a7c4472fbe862667"
-    CLIENT_SECRET = "7f72898d496246ea978f8886753a3557"
-
-    sp_oauth = oauth2.SpotifyClientCredentials(client_id=CLIENT_ID,
-                            client_secret=CLIENT_SECRET)
-    token_info = sp_oauth.get_access_token(as_dict=False)
-    return token_info
- 
+   sp_oauth = SpotifyOAuth(client_id=CLIENT_ID,
+                            client_secret=CLIENT_SECRET,
+                            redirect_uri=REDIRECT_URI,
+                            scope="user-library-read")
+   token_info = sp_oauth.get_cached_token()
+   return token_info['access_token']
 
 
 #Step 2: Create soundtrack table in existing Movies database
-def create_soundtrack_and_song_tables(db_name):
+def create_soundtrack_table(db_name):
    """
-  creates the soundtrack and soundtrack_songs tables.
+  creates the soundtrack table.
 
 
    Parameters:
@@ -40,159 +41,63 @@ def create_soundtrack_and_song_tables(db_name):
    path = os.path.dirname(os.path.abspath(__file__))
    conn = sqlite3.connect(os.path.join(path, db_name))
    cur = conn.cursor()
-   cur.execute("""CREATE TABLE IF NOT EXISTS soundtracks ( 
-               id INTEGER PRIMARY KEY AUTOINCREMENT,
-               movie_title TEXT UNIQUE, 
-               movie_id INTEGER,
-               soundtrack_name TEXT UNIQUE, 
-               genre TEXT,
-               FOREIGN KEY (movie_id) REFERENCES movie(id)
-               )
-                """) 
-   
-   cur.execute("""CREATE TABLE IF NOT EXISTS soundtrack_songs (
+   cur.execute("DROP TABLE IF EXISTS Soundtracks")
+   cur.execute("""CREATE TABLE IF NOT EXISTS Soundtracks ( 
                id INTEGER PRIMARY KEY,
-               song_title TEXT,
-               soundtrack_id INTEGER,
-               FOREIGN KEY (soundtrack_id) REFERENCES soundtracks(id))
-               """)
+               movie_title TEXT, 
+               artists TEXT, 
+               album_name TEXT, 
+               genre TEXT
+               )
+                """)
    conn.commit()
    return cur, conn
 
 
-
 #Step 3: Request movie soundtrack data from Spotipy and store in soundtrack table
-def fetch_soundtrack_data(cur, conn, token):
-    
-    """
-    Fetches soundtracks for movies from the year 2024 stored in the Movies table.
+def fetch_spotify_data(cur, conn, token, title):
+   sp = spotipy.Spotify(auth=token)
+   try:
+         results = sp.search(q=title, type="album", limit=1)
+         album = results["albums"]["items"][0]
+         album_name = album["name"]
+         artists = ", ".join(artist["name"] for artist in album["artists"])
+         genre = "Soundtrack"
+         cur.execute("""
+            INSERT OR IGNORE INTO Soundtracks (movie_title, artists, album_name, genre)
+            VALUES (?, ?, ?, ?)
+            """, (title, artists, album_name, genre))
+   except Exception as e:
+         print(f"Error fetching data for {title}: {e}")
 
-    Parameters:
-    - cur: Database cursor.
-    - conn: Database connection.
-    - token: Spotify API access token.
+   conn.commit()
 
-    Returns:
-    - None
-    """
-    sp = spotipy.Spotify(auth=token)
-    movie_total = 0
 
-    # Fetch movies from 2024
-    cur.execute("SELECT id, title FROM Movies WHERE year = 2024")
-    movies = cur.fetchall()
 
-    if not movies:
-        print("No movies from 2024 found in the database.")
-        return
-
-    print("Fetching soundtracks for movies from 2024...")
-
-    for movie_id, movie_title in movies:
-        try:
-            # Search for albums on Spotify using the movie title
-            results = sp.search(q=movie_title, type="album", limit=1)
-            albums = results["albums"]["items"]
-
-            if not albums:
-                print(f"No soundtrack found for movie: {movie_title}")
-                continue
-
-            # Insert soundtrack into the 'soundtracks' table
-            album = albums[0]
-            soundtrack_name = album["name"]
-            genre = "Soundtrack"
-
-            try:
-                cur.execute("""
-                    INSERT OR IGNORE INTO soundtracks (movie_title, movie_id, soundtrack_name, genre)
-                    VALUES (?, ?, ?, ?)
-                """, (movie_title, movie_id, soundtrack_name, genre))
-                conn.commit()
-                print(f"Inserted soundtrack: {soundtrack_name} for movie: {movie_title}")
-                movie_total +=1
-            except Exception as e:
-                print(f"Error inserting soundtrack for {movie_title}. Error: {e}")
-        except Exception as e:
-            print(f"Error fetching soundtrack for {movie_title}. Error: {e}")
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    print(f"TOTAL MOVIES INSERTED INTO SOUNDTRACKS TABLE: {movie_total}")
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-def fetch_soundtrack_songs_data(cur, conn, token): 
-    """
-    Fetches songs for each soundtrack in the soundtracks table 
-    and inserts them into the soundtrack_songs table.
-
-    Parameters:
-    - cur: Database cursor.
-    - conn: Database connection.
-    - token: Spotify API token for authorization.
-
-    Returns:
-    - None
-    """
-    sp = spotipy.Spotify(auth=token)
-
-    # Fetch all soundtracks from the database
-    cur.execute("SELECT id, soundtrack_name FROM soundtracks")
-    soundtracks = cur.fetchall()
-
-    if not soundtracks:
-        print("No soundtracks found in the database.")
-        return
-
-    for soundtrack_id, soundtrack_name in soundtracks:
-        try:
-            # Search for the album by name
-            results = sp.search(q=soundtrack_name, type="album", limit=1)
-            albums = results["albums"]["items"]
-
-            if not albums:
-                print(f"No album found for soundtrack: {soundtrack_name}")
-                continue
-
-            album_id = albums[0]["id"]
-
-            # Get all songs (tracks) for the album
-            tracks_data = sp.album_tracks(album_id)
-
-            for track in tracks_data["items"]:
-                song_title = track["name"]
-
-                # Insert the song into the soundtrack_songs table
-                try:
-                    cur.execute("""
-                        INSERT OR IGNORE INTO soundtrack_songs (song_title, soundtrack_id)
-                        VALUES (?, ?)
-                    """, (song_title, soundtrack_id))
-                    print(f"Inserted song: {song_title} in soundtrack ID: {soundtrack_id}")
-                    conn.commit() 
-                except Exception as e:
-                    print(f"Error inserting song: {song_title}. Error: {e}")
-        except Exception as e:
-            print(f"Error fetching songs for soundtrack: {soundtrack_name}. Error: {e}")
+#Step 4: Run a query on Soundtracks table
+def soundtrack_query(cur):
+    cur.execute("""
+        SELECT movie_title, artists, album_name, genre
+        FROM Soundtracks
+        ORDER BY movie_title ASC
+    """)
+    results = cur.fetchall()
+    for row in results:
+        print(row)
 
 
 #Step 5: Define main function
 def main():
-    db_name = "movies.db"
-    token = get_token()
+   token = get_token()
+   cur, conn = create_soundtrack_table("movies.db")
+    # Example movie titles
+   movie_titles = ["Inception", "Avatar", "Interstellar", "The Dark Knight"]
+   for title in movie_titles:
+      fetch_spotify_data(cur, conn, token, title)
 
-    # Set up database tables
-    cur, conn = create_soundtrack_and_song_tables(db_name)
-
-    # Fetch soundtracks only for 2024 movies
-    fetch_soundtrack_data(cur, conn, token)
-
-    # Fetch songs for each soundtrack
-    fetch_soundtrack_songs_data(cur, conn, token)
-
-    conn.close()
-    print("\nSoundtrack data successfully fetched and stored!")
-                                                                                                                                                            
+   soundtrack_query(cur)
+   conn.close()
 
 # Step 6: Run the main function
 if __name__ == "__main__":
    main()
-
-
