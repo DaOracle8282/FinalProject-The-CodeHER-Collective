@@ -42,32 +42,7 @@ def join_movies_and_soundtracks(cur):
     """)
     return cur.fetchall()
 
-def calculate_avg_song_length_by_album(cur):
-    """
-    Calculates the average length of songs for each album.
-
-    Parameters:
-    - cur: Database cursor.
-
-    Returns:
-    - List of tuples: (soundtrack_name, average_length).
-    """
-    cur.execute("""
-        SELECT soundtracks.soundtrack_name, 
-               AVG(
-                   (CAST(SUBSTR(song_length, 1, 2) AS INTEGER) * 3600) + 
-                   (CAST(SUBSTR(song_length, 4, 2) AS INTEGER) * 60) + 
-                   CAST(SUBSTR(song_length, 7, 2) AS INTEGER)
-               ) AS avg_length_seconds
-        FROM soundtrack_songs
-        JOIN soundtracks ON soundtrack_songs.soundtrack_id = soundtracks.id
-        GROUP BY soundtracks.soundtrack_name
-        ORDER BY avg_length_seconds DESC
-    """)
     
-    results = cur.fetchall()
-    
-    # Format average length as HH:MM:SS
     formatted_results = []
     for soundtrack_name, avg_seconds in results:
         hours = int(avg_seconds // 3600)
@@ -82,7 +57,7 @@ def calculate_avg_song_length_by_album(cur):
     
 def analyze_joined_data(cur,conn):
     """
-    Joins the Movies and Articles tables to analyze data.
+    Counts the 
     Returns:
     - results (list of tuples): Each tuple contains the movie title, IMDb rating, and article count.
     """
