@@ -6,7 +6,7 @@ import json
 import os
 
 # Constants
-API_KEY = "b68f1a38b495424992a3176ea0263f11"
+API_KEY = "3b294c319fcb4f6481adf6fddd6918d6"
 BASE_URL = "https://newsapi.org/v2/everything"
 
 
@@ -21,7 +21,11 @@ def setup_articles_table(db_name):
     """
     path = os.path.dirname(os.path.abspath(__file__))
     conn = sqlite3.connect(os.path.join(path, db_name))
+<<<<<<< HEAD
     cur = conn.cursor
+=======
+    cur = conn.cursor()
+>>>>>>> 9eefe8a7f3d4ef9951ecd2dce72bb3ba39625fa5
     try:
         cursor = conn.cursor()
         cur.execute("""
@@ -32,18 +36,31 @@ def setup_articles_table(db_name):
                 
                 published_date TEXT,
                 article_content TEXT,
+                movie_id INTEGER,
                 UNIQUE(movie_title, article_title, published_date)
+<<<<<<< HEAD
+=======
+                FOREIGN KEY (movie_id) REFERENCES Movies(id)
+>>>>>>> 9eefe8a7f3d4ef9951ecd2dce72bb3ba39625fa5
             )
         """
         )
         conn.commit()
     except sqlite3.Error as e:
         print(f"Error setting up Articles table: {e}")
+<<<<<<< HEAD
     return conn, cur
 
 
 # Fetch and store articles from NewsAPI
 def fetch_articles(cur, conn, fetch_limit=25):
+=======
+    return cur, conn
+
+
+# Fetch and store articles from NewsAPI
+def fetch_articles(cur,conn, fetch_limit=25):
+>>>>>>> 9eefe8a7f3d4ef9951ecd2dce72bb3ba39625fa5
 
     """
     Fetches articles related to a specific movie title from NewsAPI and stores them in the database.
@@ -64,12 +81,18 @@ def fetch_articles(cur, conn, fetch_limit=25):
         'User-Agent': 'NewsAPI-Client/1.0',  # Add a user-agent for identification
         'Accept': 'application/json'         # Specify that the response should be JSON
     }
+<<<<<<< HEAD
     cur.execute("""SELECT id, title
                 FROM Movies
+=======
+    cur.execute("""SELECT id, title 
+                FROM Movies 
+>>>>>>> 9eefe8a7f3d4ef9951ecd2dce72bb3ba39625fa5
                 WHERE year = 2024
                 AND Movies.title NOT IN (SELECT Articles.movie_title FROM Articles)""")
     movies = cur.fetchall()
     if not movies:
+<<<<<<< HEAD
             print("No movies from 2024 found in the database.")
             return
     
@@ -110,47 +133,74 @@ def fetch_articles(cur, conn, fetch_limit=25):
                    
                 if cur.fetchone()[0] > 0:
                     continue
+=======
+        print("No movies from 2024 found in the database.")
+        return
 
-                try:
+    print("Fetching soundtracks for movies from 2024...")
+
+    for id, movie_title in movies:
+        
+        while total_articles < fetch_limit:
+            print(f"Fetching articles for '{movie_title}', Page: {page}")
+            params = {
+            'q': movie_title,
+            'apiKey': API_KEY,
+            'pageSize': PAGE_SIZE,
+            'page': page
+        }
+
+            try: 
+                response = requests.get(BASE_URL, params=params, headers=headers)
+                if response.status_code != 200:
+                    print(f"Error fetching articles for '{movie_title}': {response.status_code}")
+                    break
+
+                articles = response.json().get("articles", [])
+                if not articles:
+                    print(f"No more articles found for '{movie_title}'.")
+                    break
+
+                for article in articles:
+                    article_title = article.get("title", "").strip()
+                    source_name = article.get("source", {}).get("name", "").strip()
+                    published_date = article.get("publishedAt", "").strip()
+                    article_content = article.get("content", "").strip()
+
                     cur.execute("""
+                    SELECT COUNT(*) FROM Articles
+                    WHERE movie_title = ? AND article_title = ? AND published_date = ?;
+                """, (movie_title, article_title, published_date))
+                    if cur.fetchone()[0] > 0:
+                        continue
+>>>>>>> 9eefe8a7f3d4ef9951ecd2dce72bb3ba39625fa5
+
+                    try:
+                        cur.execute("""
                         INSERT OR IGNORE INTO Articles (movie_title, article_title, source_name, published_date, article_content)
                         VALUES (?, ?, ?, ?, ?)
+<<<<<<< HEAD
                     """, (movie_title, article_title, source_name, published_date, article_content)
                     total_articles += 1
                     print(f"Inserted: {article_title}")
                 except sqlite3.Error as e:
                     print(f"Error inserting article: {e}")
+=======
+                        """, (movie_title, article_title, source_name, published_date, article_content))
+                        total_articles += 1
+                        print(f"Inserted: {article_title}")
+                        conn.commit()
+                    except sqlite3.Error as e:
+                        print(f"Error inserting article: {e}")
+>>>>>>> 9eefe8a7f3d4ef9951ecd2dce72bb3ba39625fa5
 
-            conn.commit()
-            page += 1
-        except requests.exceptions.RequestException as e:
-            print(f"Network error while fetching articles for '{movie_title}': {e}")
-            break
-
-#Fetch articles for top movies
-def fetch_and_store_articles():
-    """
-    Fetches movie titles from the existing Movies table
-    and fetches related articles from NewsAPI
-    """
-    try: 
-        conn = sqlite3.connect(DB_NAME)
-        cur = conn.cursor()
-        cur.execute("SELECT DISTINCT title FROM Movies ORDER BY year DESC LIMIT 5")
-        movies = [row[0] for row in cur.fetchall()]
-        print(f"Fetching articles for movies: {movies}")
-
-        for movie_title in movies:
-            fetch_articles(cur, conn, movie_title, page_limit=5)
-
-    except sqlite3.Error as e:
-        print(f"Error fetching and storing articles: {e}")
-    finally:
-        if conn:
-            conn.close()
+                page += 1
+            except requests.exceptions.RequestException as e:
+                print(f"Network error while fetching articles for '{movie_title}': {e}")
+                break
 
 #Analyze article counts per movie
-def analyze_article_counts():
+def analyze_article_counts(cur,conn):
     """
     Analyzes the number of articles for each movie.
 
@@ -158,38 +208,32 @@ def analyze_article_counts():
     - results (list of tuples): Each tuple contains the movie title and its article count.
     """
     try:
-        conn = sqlite3.connect(DB_NAME)
-        cur = conn.cursor()
         cur.execute("""
             SELECT movie_title, COUNT(*) as article_count
             FROM Articles
             GROUP BY movie_title
             ORDER BY article_count DESC;
         """)
-        results = cur.fetchall()
-        return results
+        return cur.fetchall()
     except sqlite3.Error as e:
         print(f"Error analyzing article counts: {e}")
         return []
-    finally:
-        if conn:
-            conn.close()
+    
 
 #Perform database join and analysis
-def analyze_joined_data():
+def analyze_joined_data(cur,conn):
     """
     Joins the Movies and Articles tables to analyze data.
     Returns:
     - results (list of tuples): Each tuple contains the movie title, IMDb rating, and article count.
     """
     try:
-        conn = sqlite3.connect(DB_NAME)
-        cur = conn.cursor()
+        
         cur.execute("""
-            SELECT m.title, m.imdb_rating, COUNT(a.id) as article_count
-            FROM Movies m
-            JOIN Articles a ON m.title = a.movie_title
-            GROUP BY m.title
+            SELECT Movies.title, Movies.imdb_rating, COUNT(Articles.id) as article_count
+            FROM Movies 
+            JOIN Articles  ON Movies.title = Articles.movie_title
+            GROUP BY Movies.title
             ORDER BY article_count DESC;
         """)
         results = cur.fetchall()
@@ -197,34 +241,7 @@ def analyze_joined_data():
     except sqlite3.Error as e:
         print(f"Error analyzing joined data: {e}")
         return []
-    finally:
-        if conn:
-            conn.close()
 
-#Write data to a file
-def write_to_file(data, filename, file_format="csv"):
-    """
-    Writes analyzed data to a specified file in CSV or JSON format.
-    Parameters:
-    - data (list of tuples): Data to be written, where each tuple contains fields (ex: Movie Title, IMDb Rating, Article Count).
-    - filename (str): Name of the output file.
-    - file_format (str): Format of the file, either 'csv' or 'json'.
-    
-    Purpose:
-    Thid function outputs analyzed data for external use, enabling further processing or presentation.
-    In CSV format, the file includes headers to describe the fields.
-    """
-    try:
-        if file_format == "csv":
-            with open(filename, "w", newline="", encoding="utf-8") as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(["Movie Title", "IMDb Rating", "Article Count"])
-                writer.writerows(data)
-        elif file_format == "json":
-            with open(filename, "w", encoding="utf-8") as jsonfile:
-                json.dump(data, jsonfile, indent=4)
-    except IOError as e:
-        print(f"Error writing to file {filename}: {e}")
 
 #Create visualizations
 def create_visualizations(article_counts, joined_data):
@@ -271,15 +288,15 @@ def main():
     Main function to orchestrate the process of setting up the database,
     fetching articles, analyzing data, and creating visualizations.
     """
-    setup_articles_table()
-    fetch_and_store_articles()
-
+    db_name = "movies.db"
+    cur,conn = setup_articles_table(db_name)
+    fetch_articles(cur, conn, fetch_limit=25)
     #Analyze and visualize data
-    article_counts = analyze_article_counts()
-    joined_data = analyze_joined_data()
+    article_counts = analyze_article_counts(cur, conn)
+    joined_data = analyze_joined_data(cur,conn)
 
-    write_to_file(joined_data, "joined_data.csv", file_format="csv")
     create_visualizations(article_counts, joined_data)
+    conn.close()
 
 if __name__ == "__main__":
     main()

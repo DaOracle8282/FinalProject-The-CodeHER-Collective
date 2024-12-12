@@ -77,7 +77,6 @@ def calculate_avg_song_length_by_album(cur):
         formatted_results.append((soundtrack_name, avg_length))
     
     return formatted_results
-    return cur.fetchall()
 
 import csv
 
