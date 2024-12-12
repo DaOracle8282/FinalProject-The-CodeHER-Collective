@@ -1,0 +1,73 @@
+Average IMDb Rating by Genre
+Genre,Average Rating
+"Documentary, Biography, History",9.5
+Action,9.0
+N/A,8.3
+Documentary,6.449999999999999
+"Animation, Action, Adventure",6.25
+"Comedy, Horror",5.5
+"Animation, Adventure, Comedy",5.5
+Comedy,4.575
+"Animation, Action, Comedy",2.2
+
+Movie Counts by Year
+Year,Count
+2024,105
+
+Movies with Soundtracks
+Title,Year,Album Name,Genre
+The Garfield Movie,2024,The Garfield Movie (Original Motion Picture Soundtrack),"Animation, Adventure, Comedy"
+Saving Bikini Bottom: The Sandy Cheeks Movie,2024,Saving Bikini Bottom: The Sandy Cheeks Movie (Original Motion Picture Soundtrack),"Animation, Adventure, Comedy"
+The 4:30 Movie,2024,The 4:30 Movie (Original Motion Picture Soundtrack),Comedy
+The Casagrandes Movie,2024,The Casagrandes Movie: Songs from and Inspired by the Original Motion Picture,"Animation, Adventure, Comedy"
+Big City Greens the Movie: Spacecation,2024,Big City Greens the Movie: Spacecation (Original Soundtrack),"Animation, Action, Adventure"
+Ryan's World the Movie: Titan Universe Adventure,2024,Ryan's World the Movie: Titan Universe Adventure (The Original Motion Picture Soundtrack),"Animation, Action, Comedy"
+Slave Play. Not a Movie. A Play.,2024,Slave,Documentary
+Abducted at an HBCU: A Black Girl Missing Movie,2024,Abducted,"Drama, Mystery"
+The Amazing World of Gumball: The Movie,2024,The Amazing World of Gumball,"Animation, Adventure, Comedy"
+I Want to Be Neenja! The Movie,2024,I Want To Be Neenja,Comedy
+Another Cabin in the Woods Movie,2024,Cabin in the Woods,"Comedy, Horror"
+The Wrong Movie,2024,The Theme from The Wrong Movie,Drama
+Cheech and Chong's Last Movie,2024,Cheech And Chong,Documentary
+Every Christopher Nolan Movie Ranked,2024,Nolan,News
+These Guys the Movie,2024,MOVIE,Comedy
+Evil Tyson J33: The Movie,2024,Evil,Comedy
+LOL Surprise! The Skate Dance Movie,2024,The Skate Dance Movie,Comedy
+Five Nights at Freddy's Minecraft Roleplay Movie,2024,Five Nights at Freddy's,"Action, Comedy, Horror"
+Eternity Road Movie,2024,ETERNITY,Drama
+"Summerville, the movie",2024,Summerville,"Short, Sci-Fi"
+Community: The Movie,2024,Community,Comedy
+Fat Chance! the Movie,2024,Fat Chance,"Animation, Adventure"
+Christie the Movie,2024,Christie,"Action, Crime, Drama"
+Home Movie,2024,Home Movie,Short
+The Movie More,2024,More,Comedy
+"Macho Madness, the Movie",2024,Macho,Short
+Super Bowl LVIII was a Movie,2024,Super Bowl,Adventure
+Movie Night,2024,The Movie Night Album,Horror
+Cacophony the Animated Movie,2024,Cacophony,"Animation, Action, Adventure"
+A Trill Movie Look Vol. 1,2024,Trill,"Short, Music"
+Double Standards Featured Movie,2024,double standard,Drama
+This is a Movie,2024,This Is A Movie (Music from the Motion Picture The Upsetter) - Single,"Documentary, Short"
+WZZQ the Movie,2024,Movie,Documentary
+Payback: Movie 2024,2024,PayBack,Sci-Fi
+One Day the Movie,2024,One Day,Adventure
+Paranoia Tapes : The Movie,2024,paranoia,Horror
+The Movie,2024,The Movie (La Verdadera Pelicula - Bachata Is Taking Over),"Animation, Short"
+Most Wanted: The Movie,2024,Most Wanted,"Animation, Short, Crime"
+A Truly Awful Superhero Movie,2024,Superhero,"Short, Comedy"
+Movie Star,2024,Movie Star,"Short, Drama"
+The Watchers Roblox movie,2024,The Watchers,"Fantasy, Horror"
+Midnight Jack the Movie,2024,MIDNIGHT,"Documentary, Comedy, Music"
+Escape (The Piña Colada Movie),2024,Escape,"Short, Comedy"
+Slide or Die the Movie,2024,Slide,Action
+Cash on Delivery - The Movie,2024,Cash On Delivery,Comedy
+
+Average Song Length by Album
+Album Name,Average Length
+Cacophony,00:03:44
+Abducted,00:03:37
+Christie,00:02:57
+Cheech And Chong,00:02:52
+Cabin in the Woods,00:02:02
+Big City Greens the Movie: Spacecation (Original Soundtrack),00:01:54
+Community,00:01:40
