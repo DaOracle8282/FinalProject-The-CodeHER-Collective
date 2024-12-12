@@ -5,7 +5,7 @@ import json
 import os
 
 # Constants
-API_KEY = "3b294c319fcb4f6481adf6fddd6918d6"
+API_KEY = "da38bc1769ff4702a467994222783ec5"
 BASE_URL = "https://newsapi.org/v2/everything"
 
 
