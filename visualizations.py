@@ -20,14 +20,14 @@ def genre_bar_chart(cur):
     # Adjust genre names to stack words vertically
     formatted_genres = ['\n'.join(genre.split()) for genre in genres]
 
-    plt.figure(figsize=(10, 6))
-    plt.bar(formatted_genres, counts, color='maroon')  # Add color
-    plt.title("Top 5 Movie Genres in 2024", fontweight="bold")
-    plt.xlabel("Genres", fontweight="bold")
-    plt.ylabel("Number of Movies", fontweight="bold")
-    plt.tight_layout()  # Adjust layout to fit everything
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.bar(formatted_genres, counts, color='maroon')
+    ax.set_title("Top 5 Movie Genres in 2024", fontweight="bold")
+    ax.set_xlabel("Genres", fontweight="bold")
+    ax.set_ylabel("Number of Movies", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig("top_5_movie_genres_2024.png")
     plt.show()
-
 
 def genre_horizontal_bar_chart(cur):
     """
