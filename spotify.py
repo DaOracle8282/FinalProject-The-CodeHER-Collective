@@ -99,7 +99,7 @@ def fetch_soundtrack_data(cur, conn, token):
             break
         try:
             # Search for albums on Spotify using the movie title
-            results = sp.search(q=movie_title, type="album", limit=1)
+            results = sp.search(q=movie_title, type="album", limit=5)
             albums = results["albums"]["items"]
 
             if not albums:
@@ -107,41 +107,41 @@ def fetch_soundtrack_data(cur, conn, token):
                 continue
 
             # Insert soundtrack into the 'soundtracks' table
-            album = albums[0]
-            soundtrack_name = album["name"]
+            for album in albums:
+                soundtrack_name = album["name"]
 
-            if movie_title.lower() not in soundtrack_name.lower():
-                print(f"Album '{soundtrack_name}' does not match the movie title '{movie_title}'. Skipping.")
-                continue
+                if movie_title.lower() not in soundtrack_name.lower():
+                    print(f"Album '{soundtrack_name}' does not match the movie title '{movie_title}'. Skipping.")
+                    continue
 
             #Retrieve Genre of Album from search
 
-            album_id = album["id"]
-            album_details = sp.album(album_id)
-            genres = album_details.get("genres", [])
-            genre = genres[0] if genres else "Unknown"
+                album_id = album["id"]
+                album_details = sp.album(album_id)
+                genres = album_details.get("genres", [])
+                genre = genres[0] if genres else "Unknown"
 
-            tracks = sp.album_tracks(album_id)["items"]
-            total_duration_ms = sum(track["duration_ms"] for track in tracks)  # Sum up track durations
-            total_duration_hours = total_duration_ms // 3600000  # 1 hour = 3,600,000 ms
-            remaining_minutes = (total_duration_ms % 3600000) // 60000  # Remaining minutes after hours
-            remaining_seconds = (total_duration_ms % 60000) // 1000  # Remaining seconds after minutes
+                tracks = sp.album_tracks(album_id)["items"]
+                total_duration_ms = sum(track["duration_ms"] for track in tracks)  # Sum up track durations
+                total_duration_hours = total_duration_ms // 3600000  # 1 hour = 3,600,000 ms
+                remaining_minutes = (total_duration_ms % 3600000) // 60000  # Remaining minutes after hours
+                remaining_seconds = (total_duration_ms % 60000) // 1000  # Remaining seconds after minutes
 
             # Format total duration as HH:MM:SS
-            total_duration = f"{total_duration_hours:02d}:{remaining_minutes:02d}:{remaining_seconds:02d}"
-            try:
+                total_duration = f"{total_duration_hours:02d}:{remaining_minutes:02d}:{remaining_seconds:02d}"
+                try:
             
-                cur.execute("""
+                    cur.execute("""
                     INSERT OR IGNORE INTO soundtracks (movie_title, movie_id, soundtrack_name, genre, total_duration)
                     VALUES (?, ?, ?, ?, ?)
-                """, (movie_title, movie_id, soundtrack_name, genre, total_duration))
-                conn.commit()
-                print(f"Inserted soundtrack: {soundtrack_name} for movie: {movie_title}")
-                movie_total +=1
-            except Exception as e:
-                print(f"Error inserting soundtrack for {movie_title}. Error: {e}")
+                    """, (movie_title, movie_id, soundtrack_name, genre, total_duration))
+                    conn.commit()
+                    print(f"Inserted soundtrack: {soundtrack_name} for movie: {movie_title}")
+                    movie_total +=1
+                except Exception as e:
+                    print(f"Error inserting soundtrack for {movie_title}. Error: {e}")
         except Exception as e:
-            print(f"Error fetching soundtrack for {movie_title}. Error: {e}")
+                print(f"Error fetching soundtrack for {movie_title}. Error: {e}")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     print(f"TOTAL MOVIES INSERTED INTO SOUNDTRACKS TABLE: {movie_total}")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
@@ -219,7 +219,7 @@ def main():
    db_name = "movies.db"
    token = get_token()
    cur, conn = create_soundtrack_table("movies.db")
-   fetch_soundtrack_songs_data(cur, conn, token)
+   fetch_soundtrack_data(cur, conn, token)
    fetch_soundtrack_songs_data(cur, conn, token)
    conn.close()
 
@@ -227,6 +227,3 @@ def main():
 # Step 5: Run the main function
 if __name__ == "__main__":
   main()
-# Step 5: Run the main function
-if __name__ == "__main__":
-   main()
