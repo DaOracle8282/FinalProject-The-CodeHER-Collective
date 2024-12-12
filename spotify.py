@@ -94,7 +94,7 @@ def fetch_soundtrack_data(cur, conn, token):
     print("Fetching soundtracks for movies from 2024...")
 
     for movie_id, movie_title in movies:
-        if movie_total >= max_inserts:
+        if movie_total == max_inserts:
             print(f"Reached the limit of {max_inserts} rows for this execution. Stopping fetch operation.")
             break
         try:
@@ -110,7 +110,7 @@ def fetch_soundtrack_data(cur, conn, token):
             for album in albums:
                 soundtrack_name = album["name"]
 
-                if movie_title.lower() not in soundtrack_name.lower():
+                if movie_title.lower() not in soundtrack_name.lower() and soundtrack_name.lower() not in movie_title.lower() :
                     print(f"Album '{soundtrack_name}' does not match the movie title '{movie_title}'. Skipping.")
                     continue
 
@@ -166,7 +166,7 @@ def fetch_soundtrack_songs_data(cur, conn, token):
     # Fetch all soundtracks from the database
     cur.execute("""SELECT id, soundtrack_name 
                 FROM soundtracks
-                WHERE id NOT IN (SELECT soundtrack_id FROM soundtrack_songs)""")
+                WHERE id NOT IN (SELECT song_title FROM soundtrack_songs)""")
     soundtracks = cur.fetchall()
 
     if not soundtracks:
