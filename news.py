@@ -3,48 +3,47 @@ import requests
 import csv
 import matplotlib.pyplot as plt
 import json
+import os
 
 # Constants
 API_KEY = "b68f1a38b495424992a3176ea0263f11"
 BASE_URL = "https://newsapi.org/v2/everything"
-DB_NAME = "movies.db"
-PAGE_SIZE = 25
-MAX_ARTICLES_PER_MOVIE = 100
+
 
 
 # Set up the Articles table
-def setup_articles_table():
+def setup_articles_table(db_name):
 
     """
     Sets up the Articles table in the existing database.
     Create the table if it doesn't exist with fields for movie title, article details, and source information.
     Includes error handling to ensure smooth execution even if there are issues connecting to the database.
     """
+    path = os.path.dirname(os.path.abspath(__file__))
+    conn = sqlite3.connect(os.path.join(path, db_name))
+    cur = conn.cursor
     try:
-        conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
-        cursor.execute("""
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS Articles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 movie_title TEXT,
-                article_title TEXT,
-                source_name TEXT,
+                    
+                
                 published_date TEXT,
                 article_content TEXT,
                 UNIQUE(movie_title, article_title, published_date)
-            );
+            )
         """
         )
         conn.commit()
     except sqlite3.Error as e:
         print(f"Error setting up Articles table: {e}")
-    finally:
-        if conn:
-            conn.close()
+    return conn, cur
 
 
 # Fetch and store articles from NewsAPI
-def fetch_articles(cur, conn, movie_title, page_limit):
+def fetch_articles(cur, conn, fetch_limit=25):
 
     """
     Fetches articles related to a specific movie title from NewsAPI and stores them in the database.
@@ -52,8 +51,7 @@ def fetch_articles(cur, conn, movie_title, page_limit):
     Parameters:
     - cur: Database cursor.
     - conn: Database connection.
-    - movie_title (str): Title of the movie to search articles for.
-    - page_limit (int): Number of pages to fetch from the API.
+    - fetch_limit: limits amount of articles retrieved at one time to 25.
 
     Handles duplicate articles by checking for existing records before insertion.
     If the API response fails, prints an error message and stops further requests for the current movie.
@@ -61,30 +59,44 @@ def fetch_articles(cur, conn, movie_title, page_limit):
 
     total_articles = 0
     page = 1
+    PAGE_SIZE = 25
     headers = {
         'User-Agent': 'NewsAPI-Client/1.0',  # Add a user-agent for identification
         'Accept': 'application/json'         # Specify that the response should be JSON
     }
-    while total_articles < MAX_ARTICLES_PER_MOVIE and page <= page_limit:
-        print(f"Fetching articles for '{movie_title}', Page: {page}")
-        params = {
-            'q': movie_title,
-            'apiKey': API_KEY,
-            'pageSize': PAGE_SIZE,
-            'page': page
-        }
+    cur.execute("""SELECT id, title
+                FROM Movies
+                WHERE year = 2024
+                AND Movies.title NOT IN (SELECT Articles.movie_title FROM Articles)""")
+    movies = cur.fetchall()
+    if not movies:
+            print("No movies from 2024 found in the database.")
+            return
+    
+    print("Fetching soundtracks for movies from 2024...")
 
-        try: 
-            response = requests.get(BASE_URL, params=params, headers=headers)
-            if response.status_code != 200:
-                print(f"Error fetching articles for '{movie_title}': {response.status_code}")
-                break
+    for id, movie_title in movies:
+            while total_articles < fetch_limit:
+                print(f"Fetching articles for '{movie_title}', Page: {page}")
+                params = {
+                'q': movie_title,
+                'apiKey': API_KEY,
+                'pageSize': PAGE_SIZE,
+                'page': page
+            }
 
+            try:
+                response = requests.get(BASE_URL, params=params, headers=headers)
+                if response.status_code != 200:
+                    print(f"Error fetching articles for '{movie_title}':
+            {response.status_code}")
+                    break
             articles = response.json().get("articles", [])
             if not articles:
                 print(f"No more articles found for '{movie_title}'.")
                 break
 
+            
             for article in articles:
                 article_title = article.get("title", "").strip()
                 source_name = article.get("source", {}).get("name", "").strip()
@@ -92,9 +104,10 @@ def fetch_articles(cur, conn, movie_title, page_limit):
                 article_content = article.get("content", "").strip()
 
                 cur.execute("""
-                    SELECT COUNT(*) FROM Articles
-                    WHERE movie_title = ? AND article_title = ? AND published_date = ?;
-                """, (movie_title, article_title, published_date))
+                SELECT COUNT(*) FROM Articles
+                WHERE movie_title = ? AND article_title = ? AND published_date = ?;
+            """, (movie_title, article_title, published_date))
+                   
                 if cur.fetchone()[0] > 0:
                     continue
 
@@ -102,7 +115,7 @@ def fetch_articles(cur, conn, movie_title, page_limit):
                     cur.execute("""
                         INSERT OR IGNORE INTO Articles (movie_title, article_title, source_name, published_date, article_content)
                         VALUES (?, ?, ?, ?, ?)
-                    """, (movie_title, article_title, source_name, published_date, article_content))
+                    """, (movie_title, article_title, source_name, published_date, article_content)
                     total_articles += 1
                     print(f"Inserted: {article_title}")
                 except sqlite3.Error as e:
