@@ -42,6 +42,43 @@ def join_movies_and_soundtracks(cur):
     """)
     return cur.fetchall()
 
+def calculate_avg_song_length_by_album(cur):
+    """
+    Calculates the average length of songs for each album.
+
+    Parameters:
+    - cur: Database cursor.
+
+    Returns:
+    - List of tuples: (soundtrack_name, average_length).
+    """
+    cur.execute("""
+        SELECT soundtracks.soundtrack_name, 
+               AVG(
+                   (CAST(SUBSTR(song_length, 1, 2) AS INTEGER) * 3600) + 
+                   (CAST(SUBSTR(song_length, 4, 2) AS INTEGER) * 60) + 
+                   CAST(SUBSTR(song_length, 7, 2) AS INTEGER)
+               ) AS avg_length_seconds
+        FROM soundtrack_songs
+        JOIN soundtracks ON soundtrack_songs.soundtrack_id = soundtracks.id
+        GROUP BY soundtracks.soundtrack_name
+        ORDER BY avg_length_seconds DESC
+    """)
+    
+    results = cur.fetchall()
+    
+    # Format average length as HH:MM:SS
+    formatted_results = []
+    for soundtrack_name, avg_seconds in results:
+        hours = int(avg_seconds // 3600)
+        minutes = int((avg_seconds % 3600) // 60)
+        seconds = int(avg_seconds % 60)
+        avg_length = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        formatted_results.append((soundtrack_name, avg_length))
+    
+    return formatted_results
+    return cur.fetchall()
+
 import csv
 
 def write_to_csv(filename, data):
@@ -68,6 +105,12 @@ def write_to_csv(filename, data):
         writer.writerow(["Title", "Year", "Album Name", "Genre"])
         for row in data["movies_with_soundtracks"]:
             writer.writerow([row["title"], row["year"], row["album_name"], row["genre"]])
+            
+        writer.writerow([])  # Empty line
+        writer.writerow(["Average Song Length by Album"])
+        writer.writerow(["Album Name", "Average Length"])
+        for album_name, avg_length in data["average_song_lengths"]:
+            writer.writerow([album_name, avg_length])
         
     print(f"Data successfully written to {filename}")
 
@@ -98,13 +141,21 @@ def main():
     for row in joined_data[:10]:  # Display first 10 rows for verification
         print(row)
 
+    avg_song_lengths = calculate_avg_song_length_by_album(cur)
+    print("\nAverage Song Length by Album:")
+    for album, avg_length in avg_song_lengths:
+        print(f"{album}: {avg_length}") 
+
     # Step 4: Write data to a CSV file
     data_to_write = {
-        "average_ratings_by_genre": [{"genre": genre, "avg_rating": rating} for genre, rating in avg_ratings],
-        "movie_counts_by_year": [{"year": year, "count": count} for year, count in movie_counts],
-        "movies_with_soundtracks": [{"title": title, "year": year, "album_name": album, "genre": genre} 
-                                    for title, year, album, genre in joined_data]
-    }
+    "average_ratings_by_genre": avg_ratings,  # Use tuples directly
+    "movie_counts_by_year": movie_counts,    # Use tuples directly
+    "movies_with_soundtracks": [
+        {"title": title, "year": year, "album_name": album, "genre": genre}
+        for title, year, album, genre in joined_data],
+        "average_song_lengths": avg_song_lengths
+
+}
     write_to_csv("processed_movies.csv", data_to_write)
 
 
