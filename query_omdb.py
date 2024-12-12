@@ -78,6 +78,29 @@ def calculate_avg_song_length_by_album(cur):
     
     return formatted_results
 
+
+    
+def analyze_joined_data(cur,conn):
+    """
+    Joins the Movies and Articles tables to analyze data.
+    Returns:
+    - results (list of tuples): Each tuple contains the movie title, IMDb rating, and article count.
+    """
+    try:
+        
+        cur.execute("""
+            SELECT Movies.title, Movies.imdb_rating, COUNT(Articles.id) as article_count
+            FROM Movies 
+            JOIN Articles  ON Movies.title = Articles.movie_title
+            GROUP BY Movies.title
+              ORDER BY article_count DESC;
+        """)
+        results = cur.fetchall()
+        return results
+    except sqlite3.Error as e:
+        print(f"Error analyzing joined data: {e}")
+        return []
+
 import csv
 
 def write_to_csv(filename, data):
@@ -110,7 +133,13 @@ def write_to_csv(filename, data):
         writer.writerow(["Album Name", "Average Length"])
         for album_name, avg_length in data["average_song_lengths"]:
             writer.writerow([album_name, avg_length])
-        
+
+        writer.writerow([])  # Empty line
+        writer.writerow(["Movies, IMDB Rating, and Article Count"])
+        writer.writerow(["Movie Title", "IMDb Rating", "Article Count"])
+        for movie_title, imdb_rating, article_count in data["articles_and_imdb_ratings"]:
+            writer.writerow([movie_title, imdb_rating, article_count])
+
     print(f"Data successfully written to {filename}")
 
 
@@ -145,6 +174,12 @@ def main():
     for album, avg_length in avg_song_lengths:
         print(f"{album}: {avg_length}") 
 
+    articles_and_imdb_ratings = analyze_joined_data(cur, conn)
+    print("\nMovie Articles and Imdb Ratings")
+    for movie_title, imdb_rating, article_count in articles_and_imdb_ratings:
+        print(f"{movie_title}: {imdb_rating}, {article_count}")
+
+
     # Step 4: Write data to a CSV file
     data_to_write = {
     "average_ratings_by_genre": avg_ratings,  # Use tuples directly
@@ -152,7 +187,9 @@ def main():
     "movies_with_soundtracks": [
         {"title": title, "year": year, "album_name": album, "genre": genre}
         for title, year, album, genre in joined_data],
-        "average_song_lengths": avg_song_lengths
+    "average_song_lengths": avg_song_lengths,
+    "articles_and_imdb_ratings": articles_and_imdb_ratings 
+
 
 }
     write_to_csv("processed_movies.csv", data_to_write)
