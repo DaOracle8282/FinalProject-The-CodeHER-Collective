@@ -5,7 +5,7 @@ import json
 import os
 
 # Constants
-API_KEY = "da38bc1769ff4702a467994222783ec5"
+API_KEY = "80dd3b4afaa84da7b3b9be836471ea07"
 BASE_URL = "https://newsapi.org/v2/everything"
 
 
@@ -32,29 +32,18 @@ def setup_articles_table(db_name):
                 published_date TEXT,
                 article_content TEXT,
                 UNIQUE(movie_title, article_title, published_date)
-<<<<<<< HEAD
                 FOREIGN KEY (movie_id) REFERENCES Movies(id)
-=======
->>>>>>> dfe1bd92ce568ebb1dfa50abeac956b0972d5173
             )
         """
         )
         conn.commit()
     except sqlite3.Error as e:
         print(f"Error setting up Articles table: {e}")
-<<<<<<< HEAD
-    return cur, conn
-
-
-# Fetch and store articles from NewsAPI
-def fetch_articles(cur,conn, fetch_limit=25):
-=======
     return conn,cur
 
 
 # Fetch and store articles from NewsAPI
 def fetch_articles(cur, conn, fetch_limit=25):
->>>>>>> dfe1bd92ce568ebb1dfa50abeac956b0972d5173
 
     """
     Fetches articles related to a specific movie title from NewsAPI and stores them in the database.
@@ -137,8 +126,6 @@ def fetch_articles(cur, conn, fetch_limit=25):
                 print(f"Network error while fetching articles for '{movie_title}': {e}")
                 break
 
-<<<<<<< HEAD
-=======
 #Analyze article counts per movie
 def analyze_article_counts(con, cur):
     """
@@ -182,7 +169,6 @@ def analyze_joined_data(con,cur):
         print(f"Error analyzing joined data: {e}")
         return []
 
->>>>>>> dfe1bd92ce568ebb1dfa50abeac956b0972d5173
 
 #Create visualizations
 def articles_per_movie_chart(cur):

@@ -102,12 +102,6 @@ def write_to_csv(filename, data):
         writer.writerow(["Title", "Year", "Album Name", "Genre"])
         for row in data["movies_with_soundtracks"]:
             writer.writerow([row["title"], row["year"], row["album_name"], row["genre"]])
-            
-        writer.writerow([])  # Empty line
-        writer.writerow(["Average Song Length by Album"])
-        writer.writerow(["Album Name", "Average Length"])
-        for album_name, avg_length in data["average_song_lengths"]:
-            writer.writerow([album_name, avg_length])
 
         writer.writerow([])  # Empty line
         writer.writerow(["Movies, IMDB Rating, and Article Count"])
@@ -144,10 +138,6 @@ def main():
     for row in joined_data[:10]:  # Display first 10 rows for verification
         print(row)
 
-    avg_song_lengths = calculate_avg_song_length_by_album(cur)
-    print("\nAverage Song Length by Album:")
-    for album, avg_length in avg_song_lengths:
-        print(f"{album}: {avg_length}") 
 
     articles_and_imdb_ratings = analyze_joined_data(cur, conn)
     print("\nMovie Articles and Imdb Ratings")
@@ -162,7 +152,6 @@ def main():
     "movies_with_soundtracks": [
         {"title": title, "year": year, "album_name": album, "genre": genre}
         for title, year, album, genre in joined_data],
-    "average_song_lengths": avg_song_lengths,
     "articles_and_imdb_ratings": articles_and_imdb_ratings 
 
 
