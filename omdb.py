@@ -1,65 +1,72 @@
 import os
 import sqlite3
 import requests
+import re  # For sanitizing table names
 
 def set_up_database(db_name):
     """
-    Sets up the SQLite database and creates the Movies table if it doesn't exist.
-    
-    Arguments:
-    db_name (str): The name of the database file.
-    
-    Returns:
-    tuple: A cursor and connection object for the database.
+    Sets up the SQLite database for general configuration.
     """
     conn = sqlite3.connect(db_name)
     cur = conn.cursor()
+    
+    # Create lookup tables for Places (Countries) and Genres
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS Places (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            place TEXT UNIQUE
+        )
+    """)
+    
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS Genres (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            genre TEXT UNIQUE
+        )
+    """)
+    
+    # Create main Movies table with foreign keys to Places and Genres
     cur.execute("""
         CREATE TABLE IF NOT EXISTS Movies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT UNIQUE,
             year INTEGER,
-            genre TEXT,
-            country TEXT,
-            imdb_rating REAL
+            imdb_rating REAL,
+            place_id INTEGER,
+            genre_id INTEGER,
+            FOREIGN KEY(place_id) REFERENCES Places(id),
+            FOREIGN KEY(genre_id) REFERENCES Genres(id)
         )
     """)
-    conn.commit()
+    
     return cur, conn
 
-def movie_exists(cur, title):
+def get_or_create_lookup_id(cur, table, column, value):
     """
-    Checks if a movie with the given title already exists in the database.
-
-    Arguments:
-    cur (sqlite3.Cursor): The database cursor.
-    title (str): The title of the movie to check.
-
-    Returns:
-    bool: True if the movie exists, False otherwise.
+    Gets the id for a value in a lookup table or inserts it if it doesn't exist.
     """
-    cur.execute("SELECT 1 FROM Movies WHERE title = ?", (title,))
-    return cur.fetchone() is not None
+    cur.execute(f"SELECT id FROM {table} WHERE {column} = ?", (value,))
+    result = cur.fetchone()
+    if result:
+        return result[0]
+    else:
+        cur.execute(f"INSERT INTO {table} ({column}) VALUES (?)", (value,))
+        return cur.lastrowid
 
-
-def fetch_movies_2024(cur, conn, fetch_limit=25):
+def fetch_movies_2024(cur, conn, max_insert=25):
     """
-    Fetches up to `fetch_limit` movies from the year 2024 using the OMDB API and stores them in the database.
-
-    Arguments:
-    cur (sqlite3.Cursor): The database cursor.
-    conn (sqlite3.Connection): The database connection.
-    fetch_limit (int): The maximum number of movies to fetch in a single run.
+    Fetches up to `max_insert` movies from the year 2024 using the OMDB API
+    and populates the database.
     """
     base_url = "http://www.omdbapi.com/"
-    api_key = "25781136"  # Replace with your API key
+    api_key = "25781136"  # Replace with your valid API key
     year = 2024
-    current_count = 0
+    current_insert_count = 0
     page = 1
 
-    print(f"Starting fetch for up to {fetch_limit} movies from the year {year}.")
+    print(f"Starting fetch to add up to {max_insert} movies from year {year}.")
 
-    while current_count < fetch_limit:
+    while current_insert_count < max_insert:
         response = requests.get(base_url, params={
             "s": "movie",
             "type": "movie",
@@ -69,70 +76,65 @@ def fetch_movies_2024(cur, conn, fetch_limit=25):
         })
 
         if response.status_code != 200:
-            print(f"Error fetching movies for year {year}, page {page}: {response.status_code}")
+            print(f"Error fetching movies: {response.status_code}")
             return
 
         data = response.json()
         if data.get("Response") != "True":
-            print(f"No more movies found for year {year}, page {page}.")
+            print(f"No more movies found on page {page}.")
             return
 
         for movie in data.get("Search", []):
-            if current_count >= fetch_limit:
+            if current_insert_count >= max_insert:
+                print("Stopping fetch: Max insert limit reached.")
                 break
 
             # Fetch full movie details
-            full_data = requests.get(base_url, params={
-                "i": movie.get("imdbID"),
-                "apikey": api_key
-            }).json()
+            imdb_id = movie.get("imdbID")
+            full_data = requests.get(base_url, params={"i": imdb_id, "apikey": api_key}).json()
 
-            if full_data.get("Response") == "True" and "United States" in full_data.get("Country", ""):
+            if full_data.get("Response") == "True":
                 title = full_data.get("Title")
-                year = full_data.get("Year")
-                genre = full_data.get("Genre")
-                country = full_data.get("Country")
-                imdb_rating = full_data.get("imdbRating", "N/A")
+                country = full_data.get("Country", "Unknown").split(",")[0].strip()
+                genre = full_data.get("Genre", "N/A").split(",")[0].strip()
+                imdb_rating = full_data.get("imdbRating", "0.0")
+
                 if imdb_rating == "N/A":
                     imdb_rating = 0.0
 
-                if not title or not year:
-                    continue
+                # Lookup or create IDs for place and genre
+                place_id = get_or_create_lookup_id(cur, "Places", "place", country)
+                genre_id = get_or_create_lookup_id(cur, "Genres", "genre", genre)
 
-                # Check for duplicates in the database
-                if movie_exists(cur, title):
-                    print(f"Skipping duplicate movie: {title}")
-                    continue
-
-                # Insert movie into database
+                # Insert into Movies table
                 try:
                     cur.execute("""
-                        INSERT INTO Movies (title, year, genre, country, imdb_rating)
+                        INSERT INTO Movies (title, year, imdb_rating, place_id, genre_id)
                         VALUES (?, ?, ?, ?, ?)
-                    """, (title, int(year), genre, country, float(imdb_rating)))
+                    """, (title, year, float(imdb_rating), place_id, genre_id))
                     conn.commit()
-                    current_count += 1
-                    print(f"Inserted movie: {title}")
-                except Exception as e:
-                    print(f"Error inserting movie: {title}. Error: {e}")
+                    print(f"Inserted into Movies: {title}")
+                    current_insert_count += 1
+                except sqlite3.IntegrityError:
+                    print(f"Duplicate detected: {title}")
 
         page += 1
 
-    cur.execute("SELECT COUNT(*) FROM Movies")
-    final_count = cur.fetchone()[0]
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    print(f"TOTAL MOVIES INSERTED INTO MOVIES TABLE DURING THIS EXECUTION: {current_count}")
-    print(f"Fetch process completed. Total movie count: {final_count}")
-    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(f"Fetch process completed. Movies added this run: {current_insert_count}")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 def main():
     """
-    The main function that orchestrates the database setup and movie fetching process.
+    Main function for setting up the database and fetching movies.
     """
-    db_name = "movies.db"
+    db_name = "movies2024.db"  # Updated database name
     cur, conn = set_up_database(db_name)
-    fetch_movies_2024(cur, conn, fetch_limit=25)
+
+    # Fetch movies and populate database tables
+    fetch_movies_2024(cur, conn, max_insert=25)
+
+    # Close the database connection
     conn.close()
 
 if __name__ == "__main__":
