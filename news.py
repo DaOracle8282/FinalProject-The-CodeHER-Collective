@@ -5,7 +5,7 @@ import json
 import os
 
 # Constants
-API_KEY = "80dd3b4afaa84da7b3b9be836471ea07"
+API_KEY = "0e6d4f2afc3b4c6e9dc35cb6cca374f6"
 BASE_URL = "https://newsapi.org/v2/everything"
 
 
@@ -27,11 +27,20 @@ def setup_articles_table(db_name):
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 movie_id INTEGER,
                 article_title TEXT,
-                source_name TEXT,
+                source_id INTEGER,
                 published_date TEXT,
                 article_content TEXT,
                 UNIQUE(article_title, published_date)
                 FOREIGN KEY (movie_id) REFERENCES Movies(id)
+                FOREIGN KEY (source_id) REFERENCES Sources(id)
+            )
+        """
+        )
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS Sources (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_name TEXT UNIQUE
             )
         """
         )
@@ -110,16 +119,32 @@ def fetch_articles(cur, conn, fetch_limit=25):
                     if cur.fetchone()[0] > 0:
                         continue
 
-                    try:
+                    cur.execute("""
+                        SELECT id FROM Sources WHERE source_name = ?;
+                    """, (source_name,))
+                    source_row = cur.fetchone()
+
+                    if source_row:
+                        source_id = source_row[0]
+                    else:
+                        # Insert new source_name into Sources table
                         cur.execute("""
-                        INSERT OR IGNORE INTO Articles (movie_id, article_title, source_name, published_date, article_content)
+                            INSERT INTO Sources (source_name)
+                            VALUES (?);
+                        """, (source_name,))
+                        conn.commit()
+                        source_id = cur.lastrowid
+
+                        cur.execute("""
+                        INSERT OR IGNORE INTO Articles (movie_id, article_title, source_id, published_date, article_content)
                         VALUES (?, ?, ?, ?, ?)
-                        """, (movie_id, article_title, source_name, published_date, article_content))
+                        """, (movie_id, article_title, source_id, published_date, article_content))
                         total_articles += 1
                         print(f"Inserted: {article_title}")
+
                         conn.commit()
-                    except sqlite3.Error as e:
-                        print(f"Error inserting article: {e}")
+            except sqlite3.Error as e:
+                print(f"Error inserting article: {e}")
                 page += 1
             except requests.exceptions.RequestException as e:
                 print(f"Network error while fetching articles for '{movie_title}': {e}")
