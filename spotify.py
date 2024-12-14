@@ -45,7 +45,6 @@ def create_soundtrack_table(db_name):
                movie_title TEXT UNIQUE, 
                movie_id INTEGER,
                soundtrack_name TEXT UNIQUE, 
-               genre TEXT,
                total_duration TEXT,
                FOREIGN KEY (movie_id) REFERENCES movie(id)
                )
@@ -117,13 +116,7 @@ def fetch_soundtrack_data(cur, conn, token):
                     print(f"Album '{soundtrack_name}' does not match the movie title '{movie_title}'. Skipping.")
                     continue
 
-            #Retrieve Genre of Album from search
-
                 album_id = album["id"]
-                album_details = sp.album(album_id)
-                genres = album_details.get("genres", [])
-                genre = genres[0] if genres else "Unknown"
-
                 tracks = sp.album_tracks(album_id)["items"]
                 total_duration_ms = sum(track["duration_ms"] for track in tracks)  # Sum up track durations
                 total_duration_hours = total_duration_ms // 3600000  # 1 hour = 3,600,000 ms
@@ -135,9 +128,9 @@ def fetch_soundtrack_data(cur, conn, token):
                 try:
             
                     cur.execute("""
-                    INSERT OR IGNORE INTO soundtracks (movie_title, movie_id, soundtrack_name, genre, total_duration)
-                    VALUES (?, ?, ?, ?, ?)
-                    """, (movie_title, movie_id, soundtrack_name, genre, total_duration))
+                    INSERT OR IGNORE INTO soundtracks (movie_title, movie_id, soundtrack_name, total_duration)
+                    VALUES (?, ?, ?, ?)
+                    """, (movie_title, movie_id, soundtrack_name, total_duration))
                     conn.commit()
                     print(f"Inserted soundtrack: {soundtrack_name} for movie: {movie_title}")
                     movie_total +=1
@@ -169,7 +162,7 @@ def fetch_soundtrack_songs_data(cur, conn, token):
     # Fetch all soundtracks from the database
     cur.execute("""SELECT id, soundtrack_name 
                 FROM soundtracks
-                WHERE id NOT IN (SELECT song_title FROM soundtrack_songs)""")
+                WHERE id NOT IN (SELECT soundtrack_id FROM soundtrack_songs)""")
     soundtracks = cur.fetchall()
 
     if not soundtracks:
@@ -219,9 +212,8 @@ def fetch_soundtrack_songs_data(cur, conn, token):
 
 #Step 4: Define main function
 def main():
-   db_name = "movies.db"
    token = get_token()
-   cur, conn = create_soundtrack_table("movies.db")
+   cur, conn = create_soundtrack_table("movies2024.db")
    fetch_soundtrack_data(cur, conn, token)
    fetch_soundtrack_songs_data(cur, conn, token)
    conn.close()
