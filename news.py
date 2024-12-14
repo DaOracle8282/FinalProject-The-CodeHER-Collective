@@ -30,7 +30,7 @@ def setup_articles_table(db_name):
                 source_name TEXT,
                 published_date TEXT,
                 article_content TEXT,
-                UNIQUE(movie_title, article_title, published_date)
+                UNIQUE(article_title, published_date)
                 FOREIGN KEY (movie_id) REFERENCES Movies(id)
             )
         """
@@ -120,11 +120,13 @@ def fetch_articles(cur, conn, fetch_limit=25):
                         conn.commit()
                     except sqlite3.Error as e:
                         print(f"Error inserting article: {e}")
-
                 page += 1
             except requests.exceptions.RequestException as e:
                 print(f"Network error while fetching articles for '{movie_title}': {e}")
                 break
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(f"TOTAL ARTICLES INSERTED INTO  TABLE: {total_articles}")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 #Analyze article counts per movie
 def analyze_article_counts(conn, cur):
