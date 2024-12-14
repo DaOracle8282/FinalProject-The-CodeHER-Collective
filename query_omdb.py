@@ -22,7 +22,8 @@ def calculate_avg_rating_by_table(cur, lookup_table, fk_column, file, header_lis
         writer.writerows(results)
 
     print(f"Data written to {file}")
-
+    f.close()
+    return results
 
 def total_movies_by_table(cur, lookup_table, fk_column, file, header_list):
     """
@@ -43,7 +44,8 @@ def total_movies_by_table(cur, lookup_table, fk_column, file, header_list):
         writer.writerows(results)
 
     print(f"Data written to {file}")
-  
+    f.close()
+    return results
 
 def join_movies_and_soundtracks(cur, file):
     """
@@ -66,6 +68,7 @@ def join_movies_and_soundtracks(cur, file):
         writer.writerow(["Title", "Year", "Soundtrack Name", "Genre"])
         writer.writerows(results)
     print(f"Movies with soundtracks written to {file}")
+    f.close()
     return results
     
 
@@ -93,6 +96,7 @@ def articles_and_movies(cur, file):
             writer.writerows(results)
 
         print(f"Joined data analysis written to {file}")
+        f.close()
         return results
     except sqlite3.Error as e:
         print(f"Error analyzing joined data: {e}")
