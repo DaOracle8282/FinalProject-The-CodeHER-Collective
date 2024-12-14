@@ -71,6 +71,11 @@ def join_movies_and_soundtracks(cur, file):
     f.close()
     return results
     
+<<<<<<< HEAD
+=======
+
+    
+>>>>>>> a808ca2cc4bd6c6e4317c38653a8a0c08c89a46c
 def articles_and_movies(cur, file):
     """
     Counts the 
@@ -100,6 +105,10 @@ def articles_and_movies(cur, file):
         print(f"Error analyzing joined data: {e}")
         return []
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> a808ca2cc4bd6c6e4317c38653a8a0c08c89a46c
 
 def main():
     """
