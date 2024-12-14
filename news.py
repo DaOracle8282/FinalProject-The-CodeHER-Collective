@@ -22,18 +22,17 @@ def setup_articles_table(db_name):
     conn = sqlite3.connect(os.path.join(path, db_name))
     cur = conn.cursor()
     try:
-        cursor = conn.cursor()
         cur.execute("""
             CREATE TABLE IF NOT EXISTS Articles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                movie_title INTEGER,
+                movie_id INTEGER,
                 article_title TEXT,
                 source_name TEXT,
                 published_date TEXT,
                 article_content TEXT,
                 UNIQUE(movie_title, article_title, published_date)
                 FOREIGN KEY (movie_id) REFERENCES Movies(id)
-            );
+            )
         """
         )
         conn.commit()
@@ -67,7 +66,7 @@ def fetch_articles(cur, conn, fetch_limit=25):
     cur.execute("""SELECT id, title 
                 FROM Movies 
                 WHERE year = 2024
-                AND Movies.title NOT IN (SELECT Articles.movie_title FROM Articles)""")
+                AND Movies.id NOT IN (SELECT movie_id FROM Articles)""")
     movies = cur.fetchall()
     if not movies:
         print("No movies from 2024 found in the database.")
@@ -78,6 +77,7 @@ def fetch_articles(cur, conn, fetch_limit=25):
     for id, movie_title in movies:
         
         while total_articles < fetch_limit:
+            movie_id = id 
             print(f"Fetching articles for '{movie_title}', Page: {page}")
             params = {
             'q': movie_title,
@@ -105,16 +105,16 @@ def fetch_articles(cur, conn, fetch_limit=25):
 
                     cur.execute("""
                     SELECT COUNT(*) FROM Articles
-                    WHERE movie_title = ? AND article_title = ? AND published_date = ?;
-                """, (movie_title, article_title, published_date))
+                    WHERE movie_id = ? AND article_title = ? AND published_date = ?;
+                """, (movie_id, article_title, published_date))
                     if cur.fetchone()[0] > 0:
                         continue
 
                     try:
                         cur.execute("""
-                        INSERT OR IGNORE INTO Articles (movie_title, article_title, source_name, published_date, article_content)
+                        INSERT OR IGNORE INTO Articles (movie_id, article_title, source_name, published_date, article_content)
                         VALUES (?, ?, ?, ?, ?)
-                        """, (movie_title, article_title, source_name, published_date, article_content))
+                        """, (movie_id, article_title, source_name, published_date, article_content))
                         total_articles += 1
                         print(f"Inserted: {article_title}")
                         conn.commit()
@@ -127,7 +127,7 @@ def fetch_articles(cur, conn, fetch_limit=25):
                 break
 
 #Analyze article counts per movie
-def analyze_article_counts(con, cur):
+def analyze_article_counts(conn, cur):
     """
     Analyzes the number of articles for each movie.
 
@@ -136,9 +136,9 @@ def analyze_article_counts(con, cur):
     """
     try:
         cur.execute("""
-            SELECT movie_title, COUNT(*) as article_count
+            SELECT movie_id, COUNT(*) as article_count
             FROM Articles
-            GROUP BY movie_title
+            GROUP BY movie_id
             ORDER BY article_count DESC;
         """)
         return cur.fetchall()
@@ -148,7 +148,7 @@ def analyze_article_counts(con, cur):
     
 
 #Perform database join and analysis
-def analyze_joined_data(con,cur):
+def analyze_joined_data(conn,cur):
     """
     Joins the Movies and Articles tables to analyze data.
     Returns:
@@ -232,14 +232,10 @@ def main():
     Main function to orchestrate the process of setting up the database,
     fetching articles, analyzing data, and creating visualizations.
     """
-    db_name = "movies2024.db"
-    conn,cur = setup_articles_table(db_name)
+
+    conn,cur = setup_articles_table("movies2024.db")
     fetch_articles(cur, conn, fetch_limit=25)
     
-    #Analyze and visualize data
-    articles_per_movie_chart(cur)
-    imdb_ratings_and_articles(cur)
-    conn.close()
 
 if __name__ == "__main__":
     main()
