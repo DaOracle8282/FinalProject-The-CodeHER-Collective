@@ -30,7 +30,7 @@ def setup_articles_table(db_name):
                 source_id INTEGER,
                 published_date TEXT,
                 article_content TEXT,
-                UNIQUE(movie_id, article_title, published_date)
+                UNIQUE(article_title, published_date)
                 FOREIGN KEY (movie_id) REFERENCES Movies(id)
                 FOREIGN KEY (source_id) REFERENCES Sources(id)
             )
@@ -83,7 +83,7 @@ def fetch_articles(cur, conn, fetch_limit=25):
 
     print("Fetching soundtracks for movies from 2024...")
 
-    for movie_id, movie_title in movies:
+    for id, movie_title in movies:
         
         while total_articles < fetch_limit:
             movie_id = id 
@@ -138,11 +138,7 @@ def fetch_articles(cur, conn, fetch_limit=25):
                         cur.execute("""
                         INSERT OR IGNORE INTO Articles (movie_id, article_title, source_id, published_date, article_content)
                         VALUES (?, ?, ?, ?, ?)
-<<<<<<< HEAD
                         """, (movie_id, article_title, source_id, published_date, article_content))
-=======
-                    """, (movie_id, article_title, source_name, published_date, article_content))
->>>>>>> 06102350db0d8bbec2b2f6a71ab57cee93992026
                         total_articles += 1
                         print(f"Inserted: {article_title}")
 
@@ -190,9 +186,8 @@ def analyze_joined_data(conn,cur):
         cur.execute("""
             SELECT Movies.title, Movies.imdb_rating, COUNT(Articles.id) as article_count
             FROM Movies 
-                JOIN Articles  
-                ON Movies.title = Articles.movie_id
-            GROUP BY Movies.title
+            JOIN Articles  ON Movies.title = Articles.movie_title
+            GROUP BY Movie.title
             ORDER BY article_count DESC;
         """)
         results = cur.fetchall()
@@ -212,11 +207,9 @@ def articles_per_movie_chart(cur):
     - joined_data (list of tuples): Joined data including IMDb ratings and article counts.
     """
     cur.execute("""
-            SELECT Movies.title, COUNT(Articles.id) as article_count
+            SELECT movie_title, COUNT(*) as article_count
             FROM Articles
-                JOIN Movies 
-                ON Movies.id = Articles.movie_id
-            GROUP BY Movies.title
+            GROUP BY movie_title
             ORDER BY article_count DESC;
         """)
     article_counts = cur.fetchall()
@@ -240,8 +233,7 @@ def imdb_ratings_and_articles(cur):
     cur.execute("""
             SELECT Movies.title, Movies.imdb_rating, COUNT(Articles.id) as article_count
             FROM Movies 
-                JOIN Articles  
-                ON Movies.id = Articles.movie_id
+            JOIN Articles  ON Movies.title = Articles.movie_title
             GROUP BY Movies.title
             ORDER BY article_count DESC;
         """)
@@ -267,15 +259,9 @@ def main():
     Main function to orchestrate the process of setting up the database,
     fetching articles, analyzing data, and creating visualizations.
     """
-    db_name = "movies2024.db"
-    conn,cur = setup_articles_table("db_name")
+
+    conn,cur = setup_articles_table("movies2024.db")
     fetch_articles(cur, conn, fetch_limit=25)
-
-    # Analyzing and visualizing data
-    articles_per_movie_chart(conn, cur)
-    imdb_ratings_and_articles(cur)
-
-    conn.close()
     
 
 if __name__ == "__main__":
