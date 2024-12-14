@@ -50,10 +50,10 @@ def total_movies_by_table(cur, lookup_table, fk_column, file, header_list):
 def join_movies_and_soundtracks(cur, file):
     """
     Joins the Movies and Soundtracks tables on the title.
-    Returns a list of tuples: (title, year, soundtrack_name, genre).
+    Returns a list of tuples: (title, soundtrack_name).
     """
     cur.execute("""
-        SELECT Movies.title, Movies.year, soundtracks.soundtrack_name, Movies.genre
+        SELECT Movies.title, soundtracks.soundtrack_name
         FROM Movies
         JOIN Soundtracks ON Movies.id = soundtracks.movie_id
         ORDER BY Movies.year DESC
@@ -65,14 +65,12 @@ def join_movies_and_soundtracks(cur, file):
 
     with open(file, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["Title", "Year", "Soundtrack Name", "Genre"])
+        writer.writerow(["Title",  "Soundtrack Name"])
         writer.writerows(results)
     print(f"Movies with soundtracks written to {file}")
     f.close()
     return results
-    
 
-    
 def articles_and_movies(cur, file):
     """
     Counts the 
@@ -84,7 +82,7 @@ def articles_and_movies(cur, file):
         cur.execute("""
             SELECT Movies.title, Movies.imdb_rating, COUNT(Articles.id) as article_count
             FROM Movies 
-            JOIN Articles  ON Movies.title = Articles.movie_title
+            JOIN Articles  ON Movies.id= Articles.movie_id
             GROUP BY Movies.title
               ORDER BY article_count DESC;
         """)
@@ -101,7 +99,6 @@ def articles_and_movies(cur, file):
     except sqlite3.Error as e:
         print(f"Error analyzing joined data: {e}")
         return []
-
 
 
 def main():
