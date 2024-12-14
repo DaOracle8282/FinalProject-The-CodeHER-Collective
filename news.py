@@ -26,14 +26,14 @@ def setup_articles_table(db_name):
         cur.execute("""
             CREATE TABLE IF NOT EXISTS Articles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                movie_title TEXT,
+                movie_title INTEGER,
                 article_title TEXT,
                 source_name TEXT,
                 published_date TEXT,
                 article_content TEXT,
                 UNIQUE(movie_title, article_title, published_date)
                 FOREIGN KEY (movie_id) REFERENCES Movies(id)
-            )
+            );
         """
         )
         conn.commit()
@@ -232,7 +232,7 @@ def main():
     Main function to orchestrate the process of setting up the database,
     fetching articles, analyzing data, and creating visualizations.
     """
-    db_name = "movies.db"
+    db_name = "movies2024.db"
     conn,cur = setup_articles_table(db_name)
     fetch_articles(cur, conn, fetch_limit=25)
     
