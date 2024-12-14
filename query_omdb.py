@@ -37,29 +37,33 @@ def join_movies_and_soundtracks(cur):
     cur.execute("""
         SELECT Movies.title, Movies.year, soundtracks.soundtrack_name, Movies.genre
         FROM Movies
+<<<<<<< HEAD
         JOIN Soundtracks ON Movies.id = soundtracks.movie_id
         ORDER BY Movies.year DESC
     """)
+=======
+        JOIN {lookup_table} ON Movies.{fk_column} = {lookup_table}.id
+        GROUP BY {lookup_table}.id
+    """
+    cur.execute(query)
+>>>>>>> 99223d73fd5e553b3abb9528ea09bd7419583405
     return cur.fetchall()
 
-    
-    formatted_results = []
-    for soundtrack_name, avg_seconds in results:
-        hours = int(avg_seconds // 3600)
-        minutes = int((avg_seconds % 3600) // 60)
-        seconds = int(avg_seconds % 60)
-        avg_length = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-        formatted_results.append((soundtrack_name, avg_length))
-    
-    return formatted_results
-
-
-    
-def analyze_joined_data(cur,conn):
+def count_movies_by_year(cur):
     """
+<<<<<<< HEAD
     Counts the 
     Returns:
     - results (list of tuples): Each tuple contains the movie title, IMDb rating, and article count.
+=======
+    Counts the number of movies grouped by year.
+    """
+    query = """
+        SELECT year, COUNT(*) 
+        FROM Movies
+        GROUP BY year
+        ORDER BY year DESC
+>>>>>>> 99223d73fd5e553b3abb9528ea09bd7419583405
     """
     try:
         
@@ -82,6 +86,7 @@ def write_to_csv(filename, data):
     """
     Writes the processed data to a CSV file.
     """
+<<<<<<< HEAD
     with open(filename, "w", newline="") as f:
         writer = csv.writer(f)
         
@@ -116,16 +121,49 @@ def write_to_csv(filename, data):
             writer.writerow([movie_title, imdb_rating, article_count])
 
     print(f"Data successfully written to {filename}")
+=======
+    with open(filename, mode='w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["Category", "Name", "Value"])  # CSV Header
+
+        # Write average ratings by genre
+        writer.writerow(["Average IMDb Ratings by Genre", "", ""])
+        for genre, avg_rating in data_dict["average_ratings_by_genre"]:
+            writer.writerow(["Genre", genre, f"{avg_rating:.2f}"])
+
+        # Write average ratings by country
+        writer.writerow(["", "", ""])  # Blank row
+        writer.writerow(["Average IMDb Ratings by Country", "", ""])
+        for country, avg_rating in data_dict["average_ratings_by_country"]:
+            writer.writerow(["Country", country, f"{avg_rating:.2f}"])
+
+        # Write total movie counts by genre
+        writer.writerow(["", "", ""])
+        writer.writerow(["Total Movies by Genre", "", ""])
+        for genre, count in data_dict["total_movies_by_genre"]:
+            writer.writerow(["Genre", genre, count])
+
+        # Write total movie counts by country
+        writer.writerow(["", "", ""])
+        writer.writerow(["Total Movies by Country", "", ""])
+        for country, count in data_dict["total_movies_by_country"]:
+            writer.writerow(["Country", country, count])
+>>>>>>> 99223d73fd5e553b3abb9528ea09bd7419583405
 
 
 def main():
     """
+<<<<<<< HEAD
     Main function for processing and exporting data.
+=======
+    Main function to test querying logic and write data to CSV.
+>>>>>>> 99223d73fd5e553b3abb9528ea09bd7419583405
     """
     db_path = os.path.join(os.path.dirname(__file__), "movies.db")
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
 
+<<<<<<< HEAD
     # Step 1: Calculate average ratings by genre
     avg_ratings = calculate_avg_rating_by_genre(cur)
     print("Average IMDb Rating by Genre:")
@@ -164,13 +202,42 @@ def main():
         for title, year, album, genre in joined_data],
     "average_song_lengths": avg_song_lengths,
     "articles_and_imdb_ratings": articles_and_imdb_ratings 
+=======
+    # Step 1: Fetch query data
+    avg_ratings_genre = calculate_avg_rating_by_table(cur, "Genres", "genre_id")
+    avg_ratings_country = calculate_avg_rating_by_table(cur, "Places", "place_id")
+    total_movies_genre = total_movies_by_table(cur, "Genres", "genre_id")
+    total_movies_country = total_movies_by_table(cur, "Places", "place_id")
+    movie_counts = count_movies_by_year(cur)
+
+    # Step 2: Display results
+    print("\nAverage IMDb Ratings by Genre:")
+    for genre, rating in avg_ratings_genre:
+        print(f"{genre}: {rating:.2f}")
+>>>>>>> 99223d73fd5e553b3abb9528ea09bd7419583405
 
 
 }
     write_to_csv("processed_movies.csv", data_to_write)
 
 
+<<<<<<< HEAD
     # Close connection
+=======
+    print("\nMovie Counts by Year:")
+    for year, count in movie_counts:
+        print(f"{year}: {count} movies")
+
+    # Step 3: Write results to CSV
+    data_to_write = {
+        "average_ratings_by_genre": avg_ratings_genre,
+        "average_ratings_by_country": avg_ratings_country,
+        "total_movies_by_genre": total_movies_genre,
+        "total_movies_by_country": total_movies_country,
+    }
+    write_to_csv("query_movies.csv", data_to_write)
+
+>>>>>>> 99223d73fd5e553b3abb9528ea09bd7419583405
     conn.close()
 
 if __name__ == "__main__":
