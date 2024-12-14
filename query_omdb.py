@@ -159,7 +159,7 @@ def main():
     Main function to test querying logic and write data to CSV.
 >>>>>>> 99223d73fd5e553b3abb9528ea09bd7419583405
     """
-    db_path = os.path.join(os.path.dirname(__file__), "movies.db")
+    db_path = os.path.join(os.path.dirname(__file__), "movies2024.db")
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
 

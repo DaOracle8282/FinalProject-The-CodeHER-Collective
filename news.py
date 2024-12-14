@@ -10,7 +10,7 @@ BASE_URL = "https://newsapi.org/v2/everything"
 
 
 
-# Set up the Articles table
+
 def setup_articles_table(db_name):
 
     """
@@ -19,7 +19,8 @@ def setup_articles_table(db_name):
     Includes error handling to ensure smooth execution even if there are issues connecting to the database.
     """
     path = os.path.dirname(os.path.abspath(__file__))
-    conn = sqlite3.connect(os.path.join(path, db_name))
+    db_path = os.path.join(path, db_name)
+    conn = sqlite3.connect(db_path)
     cur = conn.cursor()
     try:
         cur.execute("""
@@ -30,15 +31,14 @@ def setup_articles_table(db_name):
                 source_name TEXT,
                 published_date TEXT,
                 article_content TEXT,
-                UNIQUE(movie_id, article_title, published_date)
+                UNIQUE(movie_id, article_title, published_date),
                 FOREIGN KEY (movie_id) REFERENCES Movies(id)
-            )
-        """
-        )
+            );
+        """)
         conn.commit()
     except sqlite3.Error as e:
         print(f"Error setting up Articles table: {e}")
-    return conn,cur
+    return conn, cur
 
 
 # Fetch and store articles from NewsAPI
@@ -239,11 +239,11 @@ def main():
     fetching articles, analyzing data, and creating visualizations.
     """
     db_name = "movies2024.db"
-    conn,cur = setup_articles_table("db_name")
+    conn, cur = setup_articles_table(db_name)
     fetch_articles(cur, conn, fetch_limit=25)
 
     # Analyzing and visualizing data
-    articles_per_movie_chart(conn, cur)
+    articles_per_movie_chart(cur)
     imdb_ratings_and_articles(cur)
 
     conn.close()
