@@ -26,7 +26,7 @@ Family,3.1
 
 Movie Counts by Year
 Year,Count
-2024,50
+2024,75
 2015,25
 
 Movies with Soundtracks
@@ -53,11 +53,17 @@ Eternity Road Movie,2024,Eternity,Drama
 Community: The Movie,2024,Community,Comedy
 Fat Chance! the Movie,2024,Fat Chance,"Animation, Adventure"
 Christie the Movie,2024,Christie,"Action, Crime, Drama"
-
-Average Song Length by Album
-Album Name,Average Length
-Abducted,00:03:37
-Big City Greens the Movie: Spacecation (Original Soundtrack),00:01:54
+Home Movie,2024,Home Movie,Short
+The Movie More,2024,More,Comedy
+"Macho Madness, the Movie",2024,Macho,Short
+Super Bowl LVIII was a Movie,2024,Super Bowl,Adventure
+Movie Night,2024,The Movie Night Album,Horror
+Cacophony the Animated Movie,2024,Cacophony,"Animation, Action, Adventure"
+A Trill Movie Look Vol. 1,2024,Trill,"Short, Music"
+Double Standards Featured Movie,2024,double standard,Drama
+This is a Movie,2024,This Is A Movie (Music from the Motion Picture The Upsetter) - Single,"Documentary, Short"
+WZZQ the Movie,2024,Movie,Documentary
+Payback: Movie 2024,2024,PayBack,Sci-Fi
 
 "Movies, IMDB Rating, and Article Count"
 Movie Title,IMDb Rating,Article Count
