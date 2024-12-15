@@ -123,10 +123,10 @@ def imdb_ratings_and_articles(cur):
     plt.show()
 
 def longest_movie_soundtracks_chart(cur): 
-    cur.execute("""SELECT soundtracks.movie_title, soundtracks.total_duration
-                FROM soundtracks
-                JOIN Movies ON soundtracks.movie_id =Movies.id
-                ORDER BY soundtracks.total_duration DESC
+    cur.execute("""SELECT Soundtracks.movie_title, Soundtracks.total_duration
+                FROM Soundtracks
+                JOIN Movies ON Soundtracks.movie_id =Movies.id
+                ORDER BY Soundtracks.total_duration DESC
                 LIMIT 5""")
     results = cur.fetchall()
     movie_titles = [row[0] for row in results]
