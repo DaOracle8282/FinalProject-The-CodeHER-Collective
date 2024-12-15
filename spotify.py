@@ -40,23 +40,24 @@ def create_soundtrack_table(db_name):
    path = os.path.dirname(os.path.abspath(__file__))
    conn = sqlite3.connect(os.path.join(path, db_name))
    cur = conn.cursor()
-   cur.execute("""CREATE TABLE IF NOT EXISTS soundtracks ( 
+   cur.execute("""CREATE TABLE IF NOT EXISTS Soundtracks ( 
                id INTEGER PRIMARY KEY AUTOINCREMENT,
                movie_title TEXT UNIQUE, 
                movie_id INTEGER,
                soundtrack_name TEXT UNIQUE, 
-               total_duration TEXT,
-               FOREIGN KEY (movie_id) REFERENCES movie(id)
+               total_duration INTEGER,
+               FOREIGN KEY (movie_id) REFERENCES Movies(id)
                )
                 """) 
    
-   cur.execute("""CREATE TABLE IF NOT EXISTS soundtrack_songs (
+   cur.execute("""CREATE TABLE IF NOT EXISTS Songs (
                id INTEGER PRIMARY KEY,
                song_title TEXT,
                soundtrack_id INTEGER,
-               song_length TEXT,
-               FOREIGN KEY (soundtrack_id) REFERENCES soundtracks(id))
+               song_length INTEGER,
+               FOREIGN KEY (soundtrack_id) REFERENCES Soundtracks(id))
                """)
+
    conn.commit()
    return cur, conn
 
@@ -84,7 +85,7 @@ def fetch_soundtrack_data(cur, conn, token):
     cur.execute("""SELECT id, title 
                 FROM Movies 
                 WHERE year = 2024
-                AND id NOT IN (SELECT movie_id FROM soundtracks)""")
+                AND id NOT IN (SELECT movie_id FROM Soundtracks)""")
     movies = cur.fetchall()
 
     if not movies:
@@ -120,16 +121,11 @@ def fetch_soundtrack_data(cur, conn, token):
                 album_id = album["id"]
                 tracks = sp.album_tracks(album_id)["items"]
                 total_duration_ms = sum(track["duration_ms"] for track in tracks)  # Sum up track durations
-                total_duration_hours = total_duration_ms // 3600000  # 1 hour = 3,600,000 ms
-                remaining_minutes = (total_duration_ms % 3600000) // 60000  # Remaining minutes after hours
-                remaining_seconds = (total_duration_ms % 60000) // 1000  # Remaining seconds after minutes
-
-            # Format total duration as HH:MM:SS
-                total_duration = f"{total_duration_hours:02d}:{remaining_minutes:02d}:{remaining_seconds:02d}"
+                total_duration = total_duration_ms // 1000  # convert ms to seconds
+                
                 try:
-            
                     cur.execute("""
-                    INSERT OR IGNORE INTO soundtracks (movie_title, movie_id, soundtrack_name, total_duration)
+                    INSERT OR IGNORE INTO Soundtracks (movie_title, movie_id, soundtrack_name, total_duration)
                     VALUES (?, ?, ?, ?)
                     """, (movie_title, movie_id, soundtrack_name, total_duration))
                     conn.commit()
@@ -162,8 +158,8 @@ def fetch_soundtrack_songs_data(cur, conn, token):
 
     # Fetch all soundtracks from the database
     cur.execute("""SELECT id, soundtrack_name 
-                FROM soundtracks
-                WHERE id NOT IN (SELECT soundtrack_id FROM soundtrack_songs)""")
+                FROM Soundtracks
+                WHERE id NOT IN (SELECT soundtrack_id FROM Songs)""")
     soundtracks = cur.fetchall()
 
     if not soundtracks:
@@ -193,14 +189,13 @@ def fetch_soundtrack_songs_data(cur, conn, token):
                     return
                 song_title = track["name"]
                 song_length_ms = track["duration_ms"]
-                song_length_minutes = song_length_ms // 60000  # Convert to minutes
-                song_length_seconds = (song_length_ms % 60000) // 1000  # Remainder in seconds
-                song_length = f"00:{song_length_minutes:02d}:{song_length_seconds:02d}"
+                song_length = song_length_ms  // 1000  # Remainder in seconds
+            
 
                 # Insert the song into the soundtrack_songs table
                 try:
                     cur.execute("""
-                        INSERT OR IGNORE INTO soundtrack_songs (song_title, soundtrack_id, song_length)
+                        INSERT OR IGNORE INTO Songs (song_title, soundtrack_id, song_length)
                         VALUES (?, ?, ?)
                     """, (song_title, soundtrack_id, song_length))
                     print(f"Inserted song: {song_title} in soundtrack ID: {soundtrack_id}, length: {song_length}")
