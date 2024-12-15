@@ -126,6 +126,7 @@ def fetch_articles(cur, conn, fetch_limit=25):
                         """, (source_name,))
                         conn.commit()
                         source_id = cur.lastrowid
+                        
                         cur.execute("""
                         INSERT OR IGNORE INTO Articles (movie_id, article_title, 
 source_id, published_date, article_content)
