@@ -9,13 +9,14 @@ def calculate_avg_rating_by_table(cur, lookup_table, fk_column, file, header_lis
     """
     query = f"""
        SELECT {lookup_table}.{lookup_table[:-1]} AS name, AVG(Movies.imdb_rating)
+       
        FROM Movies
        JOIN {lookup_table} ON Movies.{fk_column} = {lookup_table}.id
        WHERE Movies.imdb_rating > 0
        GROUP BY {lookup_table}.id
    """
     cur.execute(query)
-    
+
     results =  cur.fetchall()
     with open(file, "w", newline="") as f:
         writer = csv.writer(f)

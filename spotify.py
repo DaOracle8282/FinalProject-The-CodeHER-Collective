@@ -50,6 +50,7 @@ def create_soundtrack_table(db_name):
                )
                 """) 
    
+   
    cur.execute("""CREATE TABLE IF NOT EXISTS Songs (
                id INTEGER PRIMARY KEY,
                song_title TEXT,
