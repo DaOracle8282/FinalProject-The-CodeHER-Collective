@@ -13,6 +13,7 @@ def calculate_aggregate_by_table(cur, lookup_table, fk_column, aggregate="COUNT(
         GROUP BY {lookup_table}.id
     """
     cur.execute(query)
+    
     return {row[0]: row[1] for row in cur.fetchall()}
 
 def plot_bar_chart(data, title, xlabel, ylabel, fig_name):

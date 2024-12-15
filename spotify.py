@@ -75,6 +75,7 @@ def fetch_soundtrack_data(cur, conn, token):
     Returns:
     - None
     """
+    
     sp = spotipy.Spotify(auth=token)
     movie_total = 0
     max_inserts = 25 

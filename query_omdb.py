@@ -15,6 +15,7 @@ def calculate_avg_rating_by_table(cur, lookup_table, fk_column, file, header_lis
        GROUP BY {lookup_table}.id
    """
     cur.execute(query)
+    
     results =  cur.fetchall()
     with open(file, "w", newline="") as f:
         writer = csv.writer(f)
