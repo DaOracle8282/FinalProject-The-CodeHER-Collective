@@ -1,6 +1,5 @@
 from omdb import set_up_database, fetch_movies_2024
 from query_omdb import calculate_avg_rating_by_genre, calculate_avg_rating_by_country, total_movies_by_table
-from spotify import fetch_spotify_data, get_token
 
 def main():
     """
