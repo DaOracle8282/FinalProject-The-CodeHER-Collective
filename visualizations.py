@@ -160,10 +160,9 @@ def longest_movie_soundtracks_chart(cur):
     
     # Prepare duration in seconds for plotting
     duration_in_seconds = [seconds_from_timedelta(duration) for duration in durations]
-
     fig, ax = plt.subplots(figsize=(12,8))
     ax.bar(movie_titles, duration_in_seconds, color='green')
-    ax.set(xlabel="Movie Title", ylabel="Length (in Seconds)", title="2024 Movies(with Movie in the Title) with the Longest Soundtracks")
+    ax.set(xlabel="Movie Title", ylabel="Length (in Seconds)", title="2024 Movies (with Movie in the Title) with the Longest Soundtracks")
     fig.autofmt_xdate(rotation=20)
     fig.savefig("longest_movie_soundtracks.png")
     plt.show()
@@ -181,7 +180,7 @@ def articles_per_movie_chart(cur):
             SELECT Movies.title, COUNT(Articles.id) as article_count
             FROM Movies 
             JOIN Articles  ON Movies.id = Articles.movie_id
-            GROUP BY Movies.title
+            GROUP BY Movies.id
             ORDER BY article_count DESC
         """)
     article_counts = cur.fetchall()
@@ -191,7 +190,7 @@ def articles_per_movie_chart(cur):
 
     plt.figure(figsize=(10, 6))
     plt.bar(movie_titles, counts, color="skyblue", label="Article Count")
-    plt.title("Number of Articles per Movie\n(Data fetched dynamically)")
+    plt.title("Number of Articles per Movie")
     plt.xlabel("Movie Title")
     plt.ylabel("Article Count")
     plt.xticks(rotation=45, ha="right")
